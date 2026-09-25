@@ -27,11 +27,18 @@ echo "--> Seeding reference data"
 python manage.py seed_studio
 
 # Create the first login without anyone having to open a shell. Django's
-# --noinput createsuperuser reads DJANGO_SUPERUSER_* from the environment.
-if [[ -n "${DJANGO_SUPERUSER_USERNAME:-}" && -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]]; then
+# --no-input createsuperuser reads DJANGO_SUPERUSER_* from the environment, and
+# needs the email as well as the username and password, because email is a
+# required field on this project's user model.
+if [[ -n "${DJANGO_SUPERUSER_USERNAME:-}" \
+   && -n "${DJANGO_SUPERUSER_EMAIL:-}" \
+   && -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]]; then
   echo "--> Ensuring the director account exists"
   python manage.py createsuperuser --no-input || \
     echo "    (already exists - leaving it alone)"
+elif [[ -n "${DJANGO_SUPERUSER_USERNAME:-}" ]]; then
+  echo "--> DJANGO_SUPERUSER_USERNAME is set but EMAIL and/or PASSWORD are not;"
+  echo "    skipping. Set all three, or create the account from the shell."
 fi
 
 echo "--> Build complete"

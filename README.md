@@ -126,50 +126,29 @@ Change a colour there and it changes everywhere, charts included.
 
 ---
 
-## Things to do before going live
+## Deploying
 
-1. **Set the environment.** Nothing sensitive is hard-coded, but the defaults
-   are development ones:
+`render.yaml` provisions the web service and a PostgreSQL database from one
+click, and `build.sh` handles migrations, static files, reference data and the
+first login. **[DEPLOY.md](DEPLOY.md)** is the walkthrough.
 
-   ```bash
-   DJANGO_SECRET_KEY=<a new random 50-char string>
-   DJANGO_DEBUG=false
-   DJANGO_ALLOWED_HOSTS=balletdancestudioug.com,www.balletdancestudioug.com
-   DJANGO_CSRF_TRUSTED_ORIGINS=https://balletdancestudioug.com
-   DATABASE_URL=postgres://user:password@host:5432/dbname
-   EMAIL_HOST=…  EMAIL_HOST_USER=…  EMAIL_HOST_PASSWORD=…
-   ```
+Two things in there matter more than the rest:
 
-   With `DJANGO_DEBUG=false` the project turns on HTTPS redirects, HSTS, secure
-   cookies and the rest by itself. `psycopg` is already installed — Postgres
-   needs only `DATABASE_URL`.
+- **Uploads need a persistent disk** (or object storage). A Render container's
+  filesystem is wiped on every deploy, so without one the hero video, gallery
+  photos and payment receipts disappear the next time you push.
+- **Free PostgreSQL expires after 30 days.** Upgrade it before then or the data
+  is gone.
 
-2. **Serve static and media files.** Run `collectstatic` and put a real web
-   server or object store in front of `/static/` and `/media/`. Django's dev
-   server will not do it.
+Once it is live: change the director password, remove the `DJANGO_SUPERUSER_*`
+variables, fill in **Website → Site settings**, and swap the placeholder hero
+loop for real footage (raising *overlay opacity* back to ~`0.45`, since real
+video is brighter than the placeholder).
 
-3. **Replace the hero video.** A generated placeholder is in place —
-   an abstract loop of drifting stage light in the brand palette, at
-   `media/site/hero/hero-placeholder.mp4`. Swap it for real footage of the
-   studio under Admin → Website → Hero slides: a muted MP4 of roughly 10–25
-   seconds, under about 15 MB, with a poster image for the moment before it
-   loads. Real footage is usually brighter than the placeholder, so raise
-   *overlay opacity* back to around `0.45` when you do, to keep the headline
-   readable. With no video at all the page falls back to a styled gradient
-   rather than a blank rectangle.
-
-   The placeholder was produced by a throwaway script, not by anything the
-   project depends on — `imageio`/`imageio-ffmpeg` are **not** in
-   `requirements.txt` and nothing at runtime needs them.
-
-4. **Fill in Site settings.** Admin → Website → Site settings: real phone
-   numbers, the WhatsApp line, social links, opening hours, and the studio's
-   sickle cell statement.
-
-5. **Check the health fields.** `Student` records can hold sickle cell status,
-   allergies, medication and doctor details. They default to *not disclosed* and
-   are visible only to teaching staff — but they are personal data, so confirm
-   the studio's consent wording before collecting them.
+One thing worth confirming before the studio collects it: `Student` records can
+hold sickle cell status, allergies, medication and doctor details. They default
+to *not disclosed* and are visible only to teaching staff, but they are personal
+data about children — check the studio's consent wording first.
 
 ---
 
