@@ -1,0 +1,9 @@
+<div class="announce-bar announce-{{ bar_announcement.level }}" data-id="{{ bar_announcement.pk }}" role="region" aria-label="Studio announcement">
+  <i class="fas {{ bar_announcement.icon|default:'fa-bullhorn' }}" aria-hidden="true"></i>
+  <strong>{{ bar_announcement.title }}</strong>
+  {% if bar_announcement.message %}&nbsp;—&nbsp;{{ bar_announcement.message|truncatewords:22 }}{% endif %}
+  {% if bar_announcement.link_url %}
+    <a href="{{ bar_announcement.link_url }}">{{ bar_announcement.link_text|default:"Read more" }}</a>
+  {% endif %}
+  <button type="button" class="close" aria-label="Dismiss announcement"><i class="fas fa-xmark"></i></button>
+</div>

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <span class="kicker">Every December</span>
+    <h1>The annual recital</h1>
+    <p class="lede">Our flagship performance, danced for sickle cell awareness in the first week of December.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap wrap-tight">
+    {% if past %}
+      <h2 class="mb-3">Past recitals</h2>
+      <div class="grid grid-2">
+        {% for recital in past %}
+          <a href="{{ recital.get_absolute_url }}" class="card" data-reveal>
+            <div class="card-body">
+              <span class="pill pill-pink">{{ recital.year }}</span>
+              <h3 class="mt-2">{{ recital.title }}</h3>
+              {% if recital.theme %}<p class="mt-1">{{ recital.theme }}</p>{% endif %}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <i class="fas fa-masks-theater"></i>
+        <h3>This year&rsquo;s recital has not been announced yet</h3>
+        <p>Details are published here once the programme is set. In the meantime, see
+          <a href="{% url 'events:calendar' %}" class="text-pink">what else is on</a>.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

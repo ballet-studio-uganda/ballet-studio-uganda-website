@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  {% if programme.image %}<img class="bg" src="{{ programme.image.url }}" alt="">{% endif %}
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'website:programmes' %}">Training</a><i class="fas fa-chevron-right"></i>
+      <span>{{ programme.name }}</span>
+    </nav>
+    <span class="kicker">{{ programme.age_range_display }}{% if programme.level_label %} &middot; {{ programme.level_label }}{% endif %}</span>
+    <h1>{{ programme.name }}</h1>
+    {% if programme.tagline %}<p class="lede">{{ programme.tagline }}</p>{% endif %}
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="split">
+      <div data-reveal="left">
+        <h2>About this programme</h2>
+        <div class="rule mb-3"></div>
+        <div class="lede">{{ programme.description|linebreaks }}</div>
+
+        {% if programme.outcome_list %}
+          <h3 class="mt-4">What dancers learn</h3>
+          <ul class="outcome-list">
+            {% for outcome in programme.outcome_list %}
+              <li><i class="fas fa-check"></i> {{ outcome }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <div data-reveal="right">
+        <div class="card card-flat">
+          <div class="card-body">
+            <h3>At a glance</h3>
+            <dl class="doc-meta mt-3">
+              <div><dt>Ages</dt><dd>{{ programme.age_range_display }}</dd></div>
+              <div><dt>Level</dt><dd>{{ programme.level_label|default:"All levels" }}</dd></div>
+              <div><dt>Class length</dt><dd>{{ programme.duration_minutes }} minutes</dd></div>
+              <div><dt>Per week</dt><dd>{{ programme.sessions_per_week }} session{{ programme.sessions_per_week|pluralize }}</dd></div>
+            </dl>
+            <a href="{% url 'website:enrol' %}?programme={{ programme.slug }}" class="btn btn-block mt-3">Enrol in {{ programme.name }}</a>
+          </div>
+        </div>
+
+        {% if classes %}
+        <div class="card card-flat mt-3">
+          <div class="card-body">
+            <h3>Current classes</h3>
+            <div class="stack mt-3">
+              {% for dance_class in classes %}
+                <div style="padding:.85rem;border:1px solid var(--line);border-radius:var(--r-sm)">
+                  <strong>{{ dance_class.name }}</strong>
+                  <div class="meta mt-1"><span><i class="fas fa-calendar"></i> {{ dance_class.schedule_display }}</span></div>
+                  <div class="meta">
+                    <span><i class="fas fa-chalkboard-user"></i> {{ dance_class.teacher_names }}</span>
+                    {% if dance_class.studio %}<span><i class="fas fa-door-open"></i> {{ dance_class.studio.name }}</span>{% endif %}
+                  </div>
+                  {% if dance_class.is_full %}
+                    <span class="pill pill-danger mt-2">Full &mdash; waiting list</span>
+                  {% else %}
+                    <span class="pill pill-success mt-2">{{ dance_class.places_left }} place{{ dance_class.places_left|pluralize }} left</span>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="section-head center"><h2>Other programmes</h2><div class="rule"></div></div>
+    <div class="grid grid-3">
+      {% for other in related %}
+        <a href="{{ other.get_absolute_url }}" class="card programme-card" data-reveal>
+          <div class="card-media">
+            {% if other.image %}<img src="{{ other.image.url }}" alt="{{ other.name }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas {{ other.icon|default:'fa-shoe-prints' }}"></i></div>{% endif %}
+            <span class="card-tag">{{ other.age_range_display }}</span>
+          </div>
+          <div class="card-body">
+            <div class="accent-line" style="--accent:{{ other.accent_colour }}"></div>
+            <h3>{{ other.name }}</h3>
+            <p>{{ other.tagline|truncatewords:14 }}</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

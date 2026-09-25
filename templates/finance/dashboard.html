@@ -1,0 +1,205 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Finance</h1><p>{{ report.period_label }}</p></div>
+  <div class="row gap-sm">
+    <a href="{% url 'finance:payment_create' %}" class="btn btn-sm"><i class="fas fa-plus"></i> Record a payment</a>
+    <a href="{% url 'finance:expense_create' %}" class="btn btn-sm btn-outline"><i class="fas fa-minus"></i> Record an expense</a>
+    <a href="{% url 'finance:reports' %}" class="btn btn-sm btn-outline"><i class="fas fa-chart-pie"></i> Reports</a>
+  </div>
+</div>
+
+{% if unconfirmed %}
+  <div class="alert alert-warning">
+    <i class="fas fa-clock"></i>
+    <div><strong>{{ unconfirmed }} payment{{ unconfirmed|pluralize }} awaiting confirmation.</strong>
+      Unconfirmed payments do not count towards income.
+      <a href="{% url 'finance:payment_list' %}?status=pending" class="text-pink" style="font-weight:600">Review &rarr;</a></div>
+  </div>
+{% endif %}
+
+{% with summary=report.summary comparison=report.comparison %}
+<div class="kpi-grid">
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-up"></i> Income</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.total_income|floatformat:0|intcomma }}</div>
+    <div class="kpi-note">
+      {% if comparison.income_change is not None %}
+        {% if comparison.income_change > 0 %}<span class="trend trend-up"><i class="fas fa-arrow-up"></i>{{ comparison.income_change }}%</span>
+        {% elif comparison.income_change < 0 %}<span class="trend trend-down"><i class="fas fa-arrow-down"></i>{{ comparison.income_change }}%</span>
+        {% endif %}
+      {% endif %}
+      <span>vs last month</span>
+    </div>
+  </div>
+
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-down"></i> Expenses</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.total_expenses|floatformat:0|intcomma }}</div>
+    <div class="kpi-note">
+      {% if comparison.expense_change is not None %}
+        {% if comparison.expense_change > 0 %}<span class="trend trend-down"><i class="fas fa-arrow-up"></i>{{ comparison.expense_change }}%</span>
+        {% elif comparison.expense_change < 0 %}<span class="trend trend-up"><i class="fas fa-arrow-down"></i>{{ comparison.expense_change }}%</span>
+        {% endif %}
+      {% endif %}
+      <span>vs last month</span>
+    </div>
+  </div>
+
+  <div class="kpi {% if summary.net >= 0 %}kpi-pink{% else %}kpi-red{% endif %}">
+    <div class="kpi-label"><i class="fas fa-scale-balanced"></i> Net</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.net|floatformat:0|intcomma }}</div>
+    <div class="kpi-note">{% if summary.margin_percent is not None %}<span>{{ summary.margin_percent }}% margin</span>{% endif %}</div>
+  </div>
+
+  <div class="kpi kpi-red">
+    <div class="kpi-label"><i class="fas fa-hourglass-half"></i> Outstanding</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.outstanding|floatformat:0|intcomma }}</div>
+    <div class="kpi-note"><span>{{ summary.overdue_count }} overdue</span></div>
+  </div>
+
+  <div class="kpi kpi-gold">
+    <div class="kpi-label"><i class="fas fa-percent"></i> Collection rate</div>
+    <div class="kpi-value">{% if summary.collection_rate is not None %}{{ summary.collection_rate }}<small>%</small>{% else %}&mdash;{% endif %}</div>
+    <div class="kpi-note"><span>{{ summary.invoices_issued }} invoice{{ summary.invoices_issued|pluralize }} issued</span></div>
+  </div>
+
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-receipt"></i> Transactions</div>
+    <div class="kpi-value">{{ summary.payment_count }}</div>
+    <div class="kpi-note"><span>{{ summary.expense_count }} expense{{ summary.expense_count|pluralize }}</span></div>
+  </div>
+</div>
+{% endwith %}
+
+<div class="chart-grid wide-first mb-3">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Income vs expenses</h3>
+      <a href="{% url 'finance:reports' %}" class="link-arrow">All reports <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body"><div class="chart-box"><canvas id="chart-income-expense"></canvas></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Income sources</h3></div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-income-breakdown"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Expense categories</h3></div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-expense-breakdown"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Recent payments</h3>
+      <a href="{% url 'finance:payment_list' %}" class="link-arrow">All <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Receipt</th><th>Dancer</th><th>Method</th><th class="money">Amount</th></tr></thead>
+          <tbody>
+            {% for payment in recent_payments %}
+              <tr onclick="window.location='{% url 'finance:payment_detail' payment.pk %}'" style="cursor:pointer">
+                <td><span class="mono">{{ payment.receipt_number }}</span><br>
+                  <span class="text-faint" style="font-size:.72rem">{{ payment.payment_date|date:"j M" }}</span></td>
+                <td>{{ payment.student.full_name|default:"—"|truncatechars:20 }}</td>
+                <td><span class="pill">{{ payment.get_method_display }}</span></td>
+                <td class="money">{{ CURRENCY }} {{ payment.amount|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="padding:2rem"><i class="fas fa-receipt"></i><p>No payments recorded.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Recent expenses</h3>
+      <a href="{% url 'finance:expense_list' %}" class="link-arrow">All <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Reference</th><th>Description</th><th class="money">Amount</th></tr></thead>
+          <tbody>
+            {% for expense in recent_expenses %}
+              <tr onclick="window.location='{% url 'finance:expense_detail' expense.pk %}'" style="cursor:pointer">
+                <td><span class="mono">{{ expense.reference }}</span><br>
+                  <span class="text-faint" style="font-size:.72rem">{{ expense.expense_date|date:"j M" }}</span></td>
+                <td>{{ expense.description|truncatechars:28 }}<br>
+                  <span class="pill" style="background:{{ expense.category.colour }}1a;color:{{ expense.category.colour }}">{{ expense.category.name }}</span></td>
+                <td class="money">{{ CURRENCY }} {{ expense.amount|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3"><div class="empty" style="padding:2rem"><i class="fas fa-money-bill-wave"></i><p>No expenses recorded.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Chase list</h3>
+      <a href="{% url 'finance:invoice_list' %}?status=overdue" class="link-arrow">All overdue <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Invoice</th><th>Dancer</th><th>Due</th><th class="money">Owing</th></tr></thead>
+          <tbody>
+            {% for invoice in outstanding %}
+              <tr onclick="window.location='{% url 'finance:invoice_detail' invoice.pk %}'" style="cursor:pointer">
+                <td class="mono">{{ invoice.number }}</td>
+                <td>{{ invoice.student.full_name|truncatechars:20 }}</td>
+                <td>{% if invoice.is_overdue %}<span class="pill pill-danger">{{ invoice.days_overdue }}d</span>{% else %}{{ invoice.due_date|date:"j M" }}{% endif %}</td>
+                <td class="money">{{ CURRENCY }} {{ invoice.balance|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="padding:2rem"><i class="fas fa-circle-check"></i><p>Everything is settled.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if budgets %}
+    <div class="panel">
+      <div class="panel-head"><h3>Budgets</h3></div>
+      <div class="panel-body">
+        {% for budget in budgets %}
+          <div class="mb-3">
+            <div class="row-between mb-1" style="font-size:.85rem">
+              <span><strong>{{ budget.name }}</strong>{% if budget.category %} &middot; {{ budget.category.name }}{% endif %}</span>
+              <span>{{ CURRENCY }} {{ budget.actual_amount|floatformat:0|intcomma }} / {{ budget.planned_amount|floatformat:0|intcomma }}</span>
+            </div>
+            <div class="bar {% if budget.is_over_budget %}bar-danger{% elif budget.used_percent > 85 %}bar-warning{% endif %}">
+              <span style="width:{% if budget.used_percent > 100 %}100{% else %}{{ budget.used_percent }}{% endif %}%"></span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{{ report.series|json_script:"data-series" }}
+{{ income_chart|json_script:"data-income" }}
+{{ expense_chart|json_script:"data-expenses" }}
+{% endblock %}

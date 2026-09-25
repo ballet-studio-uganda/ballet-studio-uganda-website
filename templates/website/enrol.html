@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>Enrol</span></nav>
+    <span class="kicker">Join the studio</span>
+    <h1>Enrol a dancer</h1>
+    <p class="lede">Tell us about your dancer and we will be in touch to arrange a free trial class.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    {% if not enrolment_open %}
+      <div class="alert alert-warning">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div>
+          <strong>Enrolment is currently closed.</strong>
+          You can still send an enquiry below and we will contact you as soon as places open.
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="split" style="align-items:start">
+      <div data-reveal="left">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i>
+              <div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+            </div>
+          {% endif %}
+          {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+
+          <fieldset class="fieldset">
+            <div class="fieldset-title">About the dancer</div>
+            <div class="form-grid">
+              {% include 'includes/field.html' with field=form.student_first_name %}
+              {% include 'includes/field.html' with field=form.student_last_name %}
+              {% include 'includes/field.html' with field=form.student_date_of_birth %}
+              {% include 'includes/field.html' with field=form.student_gender %}
+            </div>
+            {% include 'includes/field.html' with field=form.previous_experience %}
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <div class="fieldset-title">Parent or guardian</div>
+            <div class="form-grid">
+              {% include 'includes/field.html' with field=form.guardian_name %}
+              {% include 'includes/field.html' with field=form.guardian_relationship %}
+              {% include 'includes/field.html' with field=form.guardian_email %}
+              {% include 'includes/field.html' with field=form.guardian_phone %}
+            </div>
+            {% include 'includes/field.html' with field=form.home_address %}
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <div class="fieldset-title">What you are looking for</div>
+            <div class="form-grid">
+              {% include 'includes/field.html' with field=form.program %}
+              {% include 'includes/field.html' with field=form.preferred_days %}
+            </div>
+            {% include 'includes/field.html' with field=form.how_heard_about_us %}
+            {% include 'includes/field.html' with field=form.message %}
+            {% include 'includes/field.html' with field=form.consent %}
+          </fieldset>
+
+          <button type="submit" class="btn btn-lg">Send enquiry <i class="fas fa-arrow-right"></i></button>
+          <p class="helptext mt-2">We will never share your details. See our
+            <a href="/privacy-policy/" class="text-pink">privacy policy</a>.</p>
+        </form>
+      </div>
+
+      <div data-reveal="right">
+        <div class="card card-flat">
+          <div class="card-body">
+            <h3>What happens next</h3>
+            <ol class="stack mt-3" style="counter-reset:step">
+              <li class="row gap-sm" style="align-items:flex-start">
+                <span class="avatar avatar-sm">1</span>
+                <div><strong>We call or WhatsApp you</strong><br>
+                  <span class="text-soft" style="font-size:.88rem">Usually within two working days.</span></div>
+              </li>
+              <li class="row gap-sm" style="align-items:flex-start">
+                <span class="avatar avatar-sm">2</span>
+                <div><strong>A free trial class</strong><br>
+                  <span class="text-soft" style="font-size:.88rem">Your dancer tries the class we suggest. No charge, no obligation.</span></div>
+              </li>
+              <li class="row gap-sm" style="align-items:flex-start">
+                <span class="avatar avatar-sm">3</span>
+                <div><strong>You decide</strong><br>
+                  <span class="text-soft" style="font-size:.88rem">If it is a fit, we enrol them and set up your parent account.</span></div>
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        {% if programmes %}
+          <div class="card card-flat mt-3">
+            <div class="card-body">
+              <h3>Our programmes</h3>
+              <div class="stack mt-3">
+                {% for programme in programmes %}
+                  <a href="{{ programme.get_absolute_url }}" class="row-between" style="padding:.7rem;border-radius:var(--r-sm);border:1px solid var(--line)">
+                    <span><strong>{{ programme.name }}</strong><br>
+                      <span class="text-faint" style="font-size:.8rem">{{ programme.age_range_display }}</span></span>
+                    <i class="fas fa-chevron-right text-pink"></i>
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if faqs %}
+          <div class="accordion mt-3">
+            {% for faq in faqs %}
+              <div class="accordion-item">
+                <button type="button" class="accordion-head">{{ faq.question }} <i class="fas fa-plus"></i></button>
+                <div class="accordion-body"><div><p>{{ faq.answer }}</p></div></div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'dashboard:guardian_list' %}">Parents</a><i class="fas fa-chevron-right"></i>
+      <span>{{ guardian.user.display_name }}</span>
+    </nav>
+    <div class="row gap-sm">
+      <span class="avatar avatar-lg">
+        {% if guardian.user.photo %}<img src="{{ guardian.user.photo.url }}" alt="">{% else %}{{ guardian.user.initials }}{% endif %}
+      </span>
+      <div>
+        <h1>{{ guardian.user.display_name }}</h1>
+        <p><span class="mono">{{ guardian.guardian_id }}</span> &middot; {{ children|length }} dancer{{ children|length|pluralize }}</p>
+      </div>
+    </div>
+  </div>
+  <a href="{% url 'dashboard:user_detail' guardian.user.pk %}" class="btn btn-sm btn-outline">
+    <i class="fas fa-user-gear"></i> Account
+  </a>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-file-invoice"></i> Total billed</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ statement.total_billed|floatformat:0|intcomma }}</div>
+  </div>
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-circle-check"></i> Total paid</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ statement.total_paid|floatformat:0|intcomma }}</div>
+  </div>
+  <div class="kpi {% if statement.balance > 0 %}kpi-red{% else %}kpi-green{% endif %}">
+    <div class="kpi-label"><i class="fas fa-scale-balanced"></i> Balance</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ statement.balance|floatformat:0|intcomma }}</div>
+    {% if statement.overdue_count %}
+      <div class="kpi-note"><span class="trend trend-down">{{ statement.overdue_count }} overdue</span></div>
+    {% endif %}
+  </div>
+  <div class="kpi kpi-gold">
+    <div class="kpi-label"><i class="fas fa-comment-dots"></i> Prefers</div>
+    <div class="kpi-value" style="font-size:1.2rem">{{ guardian.get_preferred_contact_method_display }}</div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Contact</h3></div>
+    <div class="panel-body">
+      <dl class="doc-meta">
+        <div><dt>Email</dt><dd>{{ guardian.user.email }}</dd></div>
+        <div><dt>Phone</dt><dd>{{ guardian.user.phone|default:"—" }}</dd></div>
+        <div><dt>Alternate</dt><dd>{{ guardian.alternate_phone|default:"—" }}</dd></div>
+        <div><dt>Occupation</dt><dd>{{ guardian.occupation|default:"—" }}</dd></div>
+        <div><dt>Employer</dt><dd>{{ guardian.employer|default:"—" }}</dd></div>
+        <div><dt>Address</dt><dd>{{ guardian.residential_address|default:"—" }}</dd></div>
+      </dl>
+      <div class="row gap-sm mt-3">
+        <span class="pill {% if guardian.receives_invoices %}pill-success{% endif %}">
+          <i class="fas fa-file-invoice"></i> Invoices {% if guardian.receives_invoices %}on{% else %}off{% endif %}</span>
+        <span class="pill {% if guardian.receives_progress_reports %}pill-success{% endif %}">
+          <i class="fas fa-chart-line"></i> Reports {% if guardian.receives_progress_reports %}on{% else %}off{% endif %}</span>
+      </div>
+      {% if guardian.emergency_contact_name %}
+        <div class="alert alert-warning mt-3">
+          <i class="fas fa-phone"></i>
+          <div><strong>Emergency contact:</strong> {{ guardian.emergency_contact_name }}
+            {% if guardian.emergency_contact_phone %}<br>{{ guardian.emergency_contact_phone }}{% endif %}</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Dancers</h3></div>
+    <div class="panel-body flush">
+      {% for child in children %}
+        <a href="{% url 'academics:student_detail' child.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm">
+              {% if child.photo %}<img src="{{ child.photo.url }}" alt="">{% else %}{{ child.initials }}{% endif %}
+            </span>
+            <div>
+              <strong>{{ child.full_name }}</strong>
+              <span>{{ child.student_id }} &middot; age {{ child.age }}</span>
+            </div>
+          </div>
+          <span class="pill {% if child.status == 'active' %}pill-success{% else %}pill-warning{% endif %}">
+            {{ child.get_status_display }}
+          </span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-child-reaching"></i>
+          <p>No dancers linked to this guardian.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Invoices</h3></div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Invoice</th><th>Dancer</th><th>Due</th><th>Status</th><th class="money">Balance</th></tr></thead>
+          <tbody>
+            {% for invoice in statement.invoices %}
+              <tr onclick="window.location='{% url 'finance:invoice_detail' invoice.pk %}'" style="cursor:pointer">
+                <td class="mono">{{ invoice.number }}</td>
+                <td>{{ invoice.student.display_name }}</td>
+                <td>{{ invoice.due_date|date:"j M Y" }}</td>
+                <td>
+                  {% if invoice.is_overdue %}<span class="pill pill-danger">{{ invoice.days_overdue }}d late</span>
+                  {% else %}<span class="pill {% if invoice.is_settled %}pill-success{% else %}pill-warning{% endif %}">{{ invoice.get_status_display }}</span>{% endif %}
+                </td>
+                <td class="money">{{ CURRENCY }} {{ invoice.balance|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5"><div class="empty" style="padding:2rem">
+                <i class="fas fa-file-invoice"></i><p>No invoices raised.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

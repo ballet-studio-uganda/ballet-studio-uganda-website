@@ -1,0 +1,46 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Other income</h1><p>Donations, ticket sales, sponsorship and hire &mdash;
+    {{ CURRENCY }} {{ total|floatformat:0|intcomma }} in this period</p></div>
+  <a href="{% url 'finance:income_create' %}" class="btn btn-sm"><i class="fas fa-plus"></i> Record income</a>
+</div>
+
+<div class="period-bar">
+  {% for value, label in period_choices %}
+    {% if value != 'custom' %}
+      <a href="?period={{ value }}" class="{% if period == value %}active{% endif %}">{{ label }}</a>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Reference</th><th>Date</th><th>Category</th><th>Description</th>
+      <th>Source</th><th>Method</th><th>Transaction ID</th><th class="money">Amount</th></tr></thead>
+    <tbody>
+      {% for entry in page_obj %}
+        <tr>
+          <td class="mono">{{ entry.reference }}</td>
+          <td>{{ entry.received_date|date:"j M Y" }}</td>
+          <td><span class="pill" style="background:{{ entry.category.colour }}1a;color:{{ entry.category.colour }}">{{ entry.category.name }}</span></td>
+          <td>{{ entry.description|truncatechars:34 }}
+            {% if entry.event %}<br><span class="text-faint" style="font-size:.74rem">{{ entry.event.title }}</span>{% endif %}</td>
+          <td>{{ entry.source_name|default:"—" }}</td>
+          <td><span class="pill">{{ entry.get_method_display }}</span></td>
+          <td class="mono" style="font-size:.76rem">{{ entry.transaction_id|default:"—" }}</td>
+          <td class="money">{{ CURRENCY }} {{ entry.amount|floatformat:0|intcomma }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8"><div class="empty" style="padding:3rem">
+          <i class="fas fa-hand-holding-dollar"></i><h3>No other income in this period</h3>
+          <p>Recital donations and ticket takings belong here.</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Edit profile</h1><p>Keep your contact details current so we can reach you.</p></div>
+  <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-quiet">Cancel</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate style="max-width:820px">
+  {% csrf_token %}
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Your details</div>
+    <div class="form-grid">
+      {% for field in form.visible_fields %}
+        {% include 'includes/field.html' with field=field %}
+      {% endfor %}
+    </div>
+    {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+  </fieldset>
+
+  {% if extra_form %}
+    <fieldset class="fieldset">
+      <div class="fieldset-title">
+        {% if user.is_studio_staff %}Staff &amp; faculty page{% else %}Family details{% endif %}
+      </div>
+      <div class="form-grid">
+        {% for field in extra_form.visible_fields %}
+          {% include 'includes/field.html' with field=field %}
+        {% endfor %}
+      </div>
+    </fieldset>
+  {% endif %}
+
+  <div class="row">
+    <button type="submit" class="btn btn-lg">Save changes</button>
+    <a href="{% url 'accounts:profile' %}" class="btn btn-lg btn-quiet">Cancel</a>
+  </div>
+</form>
+{% endblock %}

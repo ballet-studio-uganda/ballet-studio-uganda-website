@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>Faculty</span></nav>
+    <span class="kicker">Who teaches you</span>
+    <h1>Our faculty</h1>
+    <p class="lede">Trained dancers and teachers who know every child in the room by name.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="grid grid-3">
+      {% for member in faculty %}
+        <article class="card person-card" data-reveal>
+          <div class="card-body">
+            <div class="card-media">
+              {% if member.user.photo %}<img src="{{ member.user.photo.url }}" alt="{{ member.user.display_name }}" loading="lazy">
+              {% else %}<div class="media-placeholder"><i class="fas fa-user"></i></div>{% endif %}
+            </div>
+            <h3>{{ member.user.display_name }}</h3>
+            <span class="person-role">{{ member.job_title|default:"Ballet Teacher" }}</span>
+
+            {% if member.bio %}<p>{{ member.bio }}</p>{% endif %}
+
+            {% if member.specialism_list %}
+              <div class="row gap-sm mt-3" style="justify-content:center">
+                {% for item in member.specialism_list %}<span class="pill pill-pink">{{ item }}</span>{% endfor %}
+              </div>
+            {% endif %}
+
+            {% if member.qualification_list %}
+              <ul class="outcome-list mt-3" style="text-align:left">
+                {% for qualification in member.qualification_list %}
+                  <li><i class="fas fa-certificate"></i> {{ qualification }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            {% if member.instagram_url or member.facebook_url or member.linkedin_url %}
+              <div class="person-social">
+                {% if member.instagram_url %}<a href="{{ member.instagram_url }}" aria-label="Instagram"><i class="fab fa-instagram"></i></a>{% endif %}
+                {% if member.facebook_url %}<a href="{{ member.facebook_url }}" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>{% endif %}
+                {% if member.linkedin_url %}<a href="{{ member.linkedin_url }}" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>{% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-users"></i>
+          <h3>Faculty profiles coming soon</h3>
+          <p>Staff appear here once an administrator ticks &ldquo;show on website&rdquo; on their profile.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

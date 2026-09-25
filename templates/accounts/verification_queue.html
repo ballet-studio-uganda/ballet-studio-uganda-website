@@ -1,0 +1,74 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Awaiting verification</h1>
+    <p>{{ pending_users|length }} account{{ pending_users|length|pluralize }} waiting.
+       Nobody can use the system until you approve them.</p>
+  </div>
+  <a href="{% url 'dashboard:user_list' %}" class="btn btn-sm btn-quiet">All accounts</a>
+</div>
+
+<div class="alert">
+  <i class="fas fa-shield-halved"></i>
+  <div>Check that the person is who they say they are before approving &mdash; these
+    accounts can see children&rsquo;s records. If in doubt, ring them first.</div>
+</div>
+
+<div class="chart-grid">
+  {% for person in pending_users %}
+    <div class="panel">
+      <div class="panel-head">
+        <div class="row gap-sm">
+          <span class="avatar">
+            {% if person.photo %}<img src="{{ person.photo.url }}" alt="">{% else %}{{ person.initials }}{% endif %}
+          </span>
+          <div>
+            <h3>{{ person.display_name }}</h3>
+            <span class="pill pill-plum mt-1">{{ person.get_role_display }}</span>
+          </div>
+        </div>
+        <span class="text-faint" style="font-size:.76rem">{{ person.created_at|timesince }} ago</span>
+      </div>
+
+      <div class="panel-body">
+        <dl class="doc-meta">
+          <div><dt>Email</dt><dd>{{ person.email }}</dd></div>
+          <div><dt>Phone</dt><dd>{{ person.phone|default:"—" }}</dd></div>
+          <div><dt>Username</dt><dd class="mono">{{ person.username }}</dd></div>
+          {% if person.date_of_birth %}<div><dt>Date of birth</dt><dd>{{ person.date_of_birth|date:"j M Y" }}</dd></div>{% endif %}
+        </dl>
+
+        {% if person.guardian_profile and person.guardian_profile.notes %}
+          <div class="alert mt-3"><i class="fas fa-children"></i>
+            <div style="font-size:.86rem">{{ person.guardian_profile.notes|linebreaks }}</div></div>
+        {% endif %}
+        {% if person.staff_profile and person.staff_profile.qualifications %}
+          <div class="alert mt-3"><i class="fas fa-certificate"></i>
+            <div style="font-size:.86rem"><strong>{{ person.staff_profile.job_title }}</strong><br>
+              {{ person.staff_profile.qualifications|linebreaks }}</div></div>
+        {% endif %}
+      </div>
+
+      <div class="panel-foot">
+        <div class="row gap-sm">
+          <form method="post" action="{% url 'dashboard:quick_verify' person.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-success"><i class="fas fa-check"></i> Verify</button>
+          </form>
+          <a href="{% url 'dashboard:user_detail' person.pk %}" class="btn btn-sm btn-outline">
+            Review in full
+          </a>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="empty" style="grid-column:1/-1;padding:4rem">
+      <i class="fas fa-circle-check"></i>
+      <h3>Everyone is verified</h3>
+      <p>No accounts are waiting. New sign-ups will appear here.</p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% load static %}
+<aside class="dash-sidebar" id="dash-sidebar">
+
+  <a href="{% url 'website:home' %}" class="dash-brand">
+    {% if studio.logo_light %}
+      <img src="{{ studio.logo_light.url }}" alt="{{ studio.studio_name }}">
+    {% else %}
+      <span class="brand-mark" aria-hidden="true">B</span>
+    {% endif %}
+    <span class="brand-words">
+      <span class="brand-name">Ballet</span>
+      <span class="brand-sub">Dance Studio UG</span>
+    </span>
+  </a>
+
+  <nav class="dash-nav" aria-label="Dashboard navigation">
+
+    <div class="nav-group">
+      <div class="nav-group-label">Overview</div>
+      <a href="{% url 'dashboard:home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' and request.resolver_match.namespace == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-gauge-high"></i> Dashboard
+      </a>
+      <a href="{% url 'accounts:notification_list' %}" class="nav-item {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}">
+        <i class="fas fa-bell"></i> Notifications
+        {% if unread_notifications %}<span class="nav-count">{{ unread_notifications }}</span>{% endif %}
+      </a>
+    </div>
+
+    {% if user.is_studio_staff or user.is_superuser %}
+      <div class="nav-group">
+        <div class="nav-group-label">Teaching</div>
+        <a href="{% url 'academics:class_list' %}" class="nav-item {% if request.resolver_match.namespace == 'academics' and 'class' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-shoe-prints"></i> Classes
+        </a>
+        <a href="{% url 'academics:timetable' %}" class="nav-item {% if request.resolver_match.namespace == 'academics' and request.resolver_match.url_name == 'timetable' %}active{% endif %}">
+          <i class="fas fa-calendar-week"></i> Timetable
+        </a>
+        <a href="{% url 'academics:register_list' %}" class="nav-item {% if request.resolver_match.namespace == 'academics' and 'register' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-clipboard-check"></i> Registers
+          {% if registers_due_count %}<span class="nav-count">{{ registers_due_count }}</span>{% endif %}
+        </a>
+        <a href="{% url 'academics:attendance' %}" class="nav-item {% if request.resolver_match.namespace == 'academics' and request.resolver_match.url_name == 'attendance' %}active{% endif %}">
+          <i class="fas fa-user-check"></i> Attendance
+        </a>
+        <a href="{% url 'academics:student_list' %}" class="nav-item {% if request.resolver_match.namespace == 'academics' and 'student' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-child-reaching"></i> Dancers
+        </a>
+        <a href="{% url 'academics:report_list' %}" class="nav-item {% if request.resolver_match.namespace == 'academics' and 'report' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-chart-line"></i> Progress reports
+        </a>
+      </div>
+    {% endif %}
+
+    {% if user.is_management or user.is_superuser %}
+      <div class="nav-group">
+        <div class="nav-group-label">Money</div>
+        <a href="{% url 'finance:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'finance' %}active{% endif %}">
+          <i class="fas fa-coins"></i> Finance
+        </a>
+        <a href="{% url 'finance:reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name and request.resolver_match.namespace == 'finance' %}active{% endif %}">
+          <i class="fas fa-chart-pie"></i> Reports
+        </a>
+        <a href="{% url 'finance:invoice_list' %}" class="nav-item {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-file-invoice-dollar"></i> Invoices
+        </a>
+        <a href="{% url 'finance:payment_list' %}" class="nav-item {% if 'payment' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-receipt"></i> Payments
+        </a>
+        <a href="{% url 'finance:expense_list' %}" class="nav-item {% if 'expense' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-money-bill-wave"></i> Expenses
+        </a>
+        <a href="{% url 'finance:income_list' %}" class="nav-item {% if 'income' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-hand-holding-dollar"></i> Other income
+        </a>
+        <a href="{% url 'finance:payroll_list' %}" class="nav-item {% if 'payroll' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-sack-dollar"></i> Payroll
+        </a>
+        <a href="{% url 'finance:fee_structure' %}" class="nav-item {% if request.resolver_match.url_name == 'fee_structure' %}active{% endif %}">
+          <i class="fas fa-tags"></i> Fee structure
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">People</div>
+        <a href="{% url 'dashboard:user_list' %}" class="nav-item {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}">
+          <i class="fas fa-users"></i> All accounts
+        </a>
+        <a href="{% url 'dashboard:verification_queue' %}" class="nav-item {% if request.resolver_match.url_name == 'verification_queue' %}active{% endif %}">
+          <i class="fas fa-user-check"></i> Verify accounts
+          {% if pending_count %}<span class="nav-count">{{ pending_count }}</span>{% endif %}
+        </a>
+        <a href="{% url 'dashboard:staff_list' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_list' %}active{% endif %}">
+          <i class="fas fa-chalkboard-user"></i> Staff
+        </a>
+        <a href="{% url 'dashboard:guardian_list' %}" class="nav-item {% if 'guardian' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-user-group"></i> Parents
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Website</div>
+        <a href="{% url 'website:applications' %}" class="nav-item {% if request.resolver_match.url_name == 'applications' %}active{% endif %}">
+          <i class="fas fa-inbox"></i> Enrolment enquiries
+        </a>
+        <a href="{% url 'website:inbox' %}" class="nav-item {% if 'inbox' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fas fa-envelope"></i> Messages
+        </a>
+        <a href="/django-admin/website/newspost/" class="nav-item"><i class="fas fa-newspaper"></i> News</a>
+        <a href="/django-admin/website/announcement/" class="nav-item"><i class="fas fa-bullhorn"></i> Announcements</a>
+        <a href="/django-admin/website/galleryalbum/" class="nav-item"><i class="fas fa-images"></i> Gallery</a>
+        <a href="/django-admin/events/event/" class="nav-item"><i class="fas fa-calendar-day"></i> Events</a>
+        <a href="/django-admin/events/recital/" class="nav-item"><i class="fas fa-star"></i> The recital</a>
+        <a href="/django-admin/website/heroslide/" class="nav-item"><i class="fas fa-film"></i> Hero video</a>
+        <a href="/django-admin/website/sitesettings/1/change/" class="nav-item"><i class="fas fa-sliders"></i> Site settings</a>
+      </div>
+    {% endif %}
+
+    {% if user.is_guardian %}
+      <div class="nav-group">
+        <div class="nav-group-label">My family</div>
+        <a href="{% url 'finance:my_statement' %}" class="nav-item {% if request.resolver_match.url_name == 'my_statement' %}active{% endif %}">
+          <i class="fas fa-file-invoice-dollar"></i> Fee statement
+        </a>
+        <a href="{% url 'events:calendar' %}" class="nav-item"><i class="fas fa-calendar"></i> Studio calendar</a>
+        <a href="{% url 'events:recital' %}" class="nav-item"><i class="fas fa-star"></i> The recital</a>
+      </div>
+    {% endif %}
+
+    {% if user.is_student %}
+      <div class="nav-group">
+        <div class="nav-group-label">My dancing</div>
+        {% if user.student_profile %}
+          <a href="{% url 'academics:student_detail' user.student_profile.pk %}" class="nav-item">
+            <i class="fas fa-chart-line"></i> My progress
+          </a>
+        {% endif %}
+        <a href="{% url 'events:calendar' %}" class="nav-item"><i class="fas fa-calendar"></i> Studio calendar</a>
+        <a href="{% url 'events:recital' %}" class="nav-item"><i class="fas fa-star"></i> The recital</a>
+      </div>
+    {% endif %}
+  </nav>
+
+  <div class="dash-sidebar-foot">
+    <a href="{% url 'accounts:profile' %}" class="sidebar-user">
+      <span class="avatar avatar-sm">
+        {% if user.photo %}<img src="{{ user.photo.url }}" alt="">{% else %}{{ user.initials }}{% endif %}
+      </span>
+      <span style="min-width:0">
+        <strong class="truncate">{{ user.display_name }}</strong>
+        <span>{{ user.get_role_display }}</span>
+      </span>
+    </a>
+  </div>
+</aside>

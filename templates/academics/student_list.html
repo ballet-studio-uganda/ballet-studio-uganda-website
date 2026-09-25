@@ -1,0 +1,39 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Dancers</h1><p>{{ total }} active across the studio</p></div>
+  {% if user.is_management %}
+    <a href="{% url 'academics:student_create' %}" class="btn btn-sm"><i class="fas fa-user-plus"></i> Add a dancer</a>
+  {% endif %}
+</div>
+
+<form method="get" class="filter-bar">
+  <div class="field">
+    <label for="q">Search</label>
+    <input type="search" name="q" id="q" class="form-input" value="{{ q }}" placeholder="Name or student ID…">
+  </div>
+  <div class="field">
+    <label for="status">Status</label>
+    <select name="status" id="status" class="form-input form-select">
+      <option value="">All statuses</option>
+      {% for value, label in statuses %}
+        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="programme">Programme</label>
+    <select name="programme" id="programme" class="form-input form-select">
+      <option value="">All programmes</option>
+      {% for programme in programmes %}
+        <option value="{{ programme.slug }}" {% if active_programme == programme.slug %}selected{% endif %}>{{ programme.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-sm"><i class="fas fa-magnifying-glass"></i> Search</button>
+  <a href="{% url 'academics:student_list' %}" class="btn btn-sm btn-quiet">Clear</a>
+</form>
+
+{% include 'academics/partials/student_rows.html' %}
+{% endblock %}

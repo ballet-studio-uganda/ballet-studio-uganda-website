@@ -1,0 +1,105 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'academics:register_list' %}">Registers</a><i class="fas fa-chevron-right"></i>
+      <span>{{ session.dance_class.name }}</span>
+    </nav>
+    <h1>{{ session.dance_class.name }}</h1>
+    <p>{{ session.date|date:"l j F Y" }} &middot; {{ session.start_time|time:"H:i" }}&ndash;{{ session.end_time|time:"H:i" }}
+      {% if session.studio %}&middot; {{ session.studio.name }}{% endif %}</p>
+  </div>
+  {% if session.register_taken %}
+    <span class="pill pill-success"><i class="fas fa-circle-check"></i>
+      Taken {{ session.register_taken_at|date:"j M, H:i" }}</span>
+  {% endif %}
+</div>
+
+<form method="post" id="register-form">
+  {% csrf_token %}
+
+  <div class="panel">
+    <div class="register-toolbar">
+      <span class="text-soft" style="font-size:.82rem;font-weight:600">Mark everyone:</span>
+      <button type="button" class="btn btn-sm btn-success" data-mark-all="present">All present</button>
+      <button type="button" class="btn btn-sm btn-quiet" data-mark-all="absent">All absent</button>
+      <span class="push tally">
+        <span><b data-tally="present">0</b> present</span>
+        <span><b data-tally="late">0</b> late</span>
+        <span><b data-tally="excused">0</b> excused</span>
+        <span><b data-tally="absent">0</b> absent</span>
+        <span class="text-faint"><b data-tally="unmarked">0</b> unmarked</span>
+      </span>
+    </div>
+
+    <div class="panel-body flush">
+      {% for row in rows %}
+        <div class="register-row">
+          <div class="register-who">
+            <span class="avatar avatar-sm">
+              {% if row.student.photo %}<img src="{{ row.student.photo.url }}" alt="">{% else %}{{ row.student.initials }}{% endif %}
+            </span>
+            <div style="min-width:0">
+              <strong>{{ row.student.full_name }}
+                {% if row.student.needs_health_watch %}
+                  <i class="fas fa-ribbon text-pink" title="Health note on file — plan rest and hydration"></i>
+                {% endif %}
+              </strong>
+              <span>{{ row.student.student_id }} &middot; age {{ row.student.age }}</span>
+            </div>
+          </div>
+
+          <div class="mark-group" role="radiogroup" aria-label="Attendance for {{ row.student.full_name }}">
+            {% for value, label in statuses %}
+              <input type="radio" name="status_{{ row.student.pk }}" id="s{{ row.student.pk }}_{{ value }}"
+                     value="{{ value }}" {% if row.mark.status == value %}checked{% endif %}>
+              <label for="s{{ row.student.pk }}_{{ value }}" title="{{ label }}">
+                {% if value == 'present' %}P{% elif value == 'late' %}L{% elif value == 'excused' %}E{% else %}A{% endif %}
+              </label>
+            {% endfor %}
+          </div>
+
+          <input type="text" name="remarks_{{ row.student.pk }}" class="form-input"
+                 placeholder="Note (optional)" value="{{ row.mark.remarks|default:'' }}"
+                 aria-label="Note for {{ row.student.full_name }}">
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:3rem 1rem">
+          <i class="fas fa-user-slash"></i>
+          <h3>No dancers enrolled</h3>
+          <p>Enrol dancers into {{ session.dance_class.name }} before taking a register.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if rows %}
+      <div class="panel-body" style="border-top:1px solid var(--line)">
+        <div class="form-grid">
+          <div class="field">
+            <label for="topic">What was covered</label>
+            <input type="text" name="topic" id="topic" class="form-input"
+                   value="{{ session.topic }}" placeholder="e.g. Barre + petit allegro">
+          </div>
+          <div class="field">
+            <label for="notes">Session notes</label>
+            <input type="text" name="notes" id="notes" class="form-input"
+                   value="{{ session.notes }}" placeholder="Anything worth remembering">
+          </div>
+        </div>
+      </div>
+
+      <div class="register-sticky">
+        <span class="text-soft" style="font-size:.85rem">
+          {{ rows|length }} dancer{{ rows|length|pluralize }} expected
+        </span>
+        <div class="row gap-sm">
+          <a href="{% url 'academics:register_list' %}" class="btn btn-quiet">Cancel</a>
+          <button type="submit" class="btn"><i class="fas fa-check"></i> Save register</button>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

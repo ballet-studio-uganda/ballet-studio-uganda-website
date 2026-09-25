@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>Watch</span></nav>
+    <span class="kicker">On screen</span>
+    <h1>Watch our dancers</h1>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="grid grid-3">
+      {% for video in videos %}
+        <a href="{{ video.video_url }}" target="_blank" rel="noopener" class="card" data-reveal>
+          <div class="card-media" style="aspect-ratio:16/9">
+            {% if video.thumbnail %}<img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas fa-play"></i></div>{% endif %}
+            <span class="card-tag"><i class="fas fa-play"></i> Watch</span>
+          </div>
+          <div class="card-body">
+            <h3 style="font-size:1.1rem">{{ video.title }}</h3>
+            {% if video.recorded_on %}<div class="meta mt-2"><span><i class="fas fa-calendar"></i> {{ video.recorded_on|date:"F Y" }}</span></div>{% endif %}
+            {% if video.description %}<p class="mt-2">{{ video.description|truncatewords:20 }}</p>{% endif %}
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-film"></i><h3>No videos yet</h3>
+          <p>Performance videos appear here once an administrator adds them.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

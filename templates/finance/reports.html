@@ -1,0 +1,190 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Financial reports</h1>
+    <p data-period-label>{{ report.period_label }}</p>
+  </div>
+  <div class="row gap-sm no-print">
+    <button onclick="window.print()" class="btn btn-sm btn-outline"><i class="fas fa-print"></i> Print</button>
+    <a href="{% url 'finance:export_csv' %}?kind=payments&amp;period={{ report.period }}" class="btn btn-sm btn-outline">
+      <i class="fas fa-file-csv"></i> Payments CSV
+    </a>
+    <a href="{% url 'finance:export_csv' %}?kind=expenses&amp;period={{ report.period }}" class="btn btn-sm btn-outline">
+      <i class="fas fa-file-csv"></i> Expenses CSV
+    </a>
+  </div>
+</div>
+
+<div class="period-bar no-print" data-period-switch="{% url 'finance:report_data' %}">
+  {% for value, label in period_choices %}
+    {% if value != 'custom' %}
+      <a href="?period={{ value }}" data-period="{{ value }}"
+         class="{% if report.period == value %}active{% endif %}">{{ label }}</a>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<details class="panel mb-3 no-print">
+  <summary class="panel-head" style="cursor:pointer;list-style:none">
+    <h3><i class="fas fa-calendar-days"></i> Custom date range</h3>
+    <i class="fas fa-chevron-down"></i>
+  </summary>
+  <div class="panel-body">
+    <form method="get" class="row gap-sm" style="align-items:flex-end">
+      <input type="hidden" name="period" value="custom">
+      <div class="field" style="margin:0"><label for="id_start_date">From</label>{{ form.start_date }}</div>
+      <div class="field" style="margin:0"><label for="id_end_date">To</label>{{ form.end_date }}</div>
+      <button class="btn btn-sm">Apply</button>
+    </form>
+    {% if form.errors %}<div class="mt-2">{{ form.non_field_errors }}</div>{% endif %}
+  </div>
+</details>
+
+{% with summary=report.summary comparison=report.comparison %}
+<div class="kpi-grid">
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-up"></i> Total income</div>
+    <div class="kpi-value" data-kpi="income">{{ CURRENCY }} {{ summary.total_income|floatformat:0|intcomma }}</div>
+    <div class="kpi-note">
+      <span>Fees {{ CURRENCY }} {{ summary.fee_income|floatformat:0|intcomma }} &middot;
+            Other {{ CURRENCY }} {{ summary.other_income|floatformat:0|intcomma }}</span>
+    </div>
+  </div>
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-down"></i> Total expenses</div>
+    <div class="kpi-value" data-kpi="expenses">{{ CURRENCY }} {{ summary.total_expenses|floatformat:0|intcomma }}</div>
+    <div class="kpi-note"><span>{{ summary.expense_count }} entr{{ summary.expense_count|pluralize:"y,ies" }}</span></div>
+  </div>
+  <div class="kpi {% if summary.net >= 0 %}kpi-pink{% else %}kpi-red{% endif %}">
+    <div class="kpi-label"><i class="fas fa-scale-balanced"></i> Net position</div>
+    <div class="kpi-value" data-kpi="net">{{ CURRENCY }} {{ summary.net|floatformat:0|intcomma }}</div>
+    <div class="kpi-note">
+      {% if comparison.net_change is not None %}
+        {% if comparison.net_change > 0 %}<span class="trend trend-up"><i class="fas fa-arrow-up"></i>{{ comparison.net_change }}%</span>
+        {% else %}<span class="trend trend-down"><i class="fas fa-arrow-down"></i>{{ comparison.net_change }}%</span>{% endif %}
+      {% endif %}
+      <span>vs previous period</span>
+    </div>
+  </div>
+  <div class="kpi kpi-red">
+    <div class="kpi-label"><i class="fas fa-hourglass-half"></i> Outstanding</div>
+    <div class="kpi-value" data-kpi="outstanding">{{ CURRENCY }} {{ summary.outstanding|floatformat:0|intcomma }}</div>
+    <div class="kpi-note"><span>{{ CURRENCY }} {{ summary.overdue|floatformat:0|intcomma }} overdue</span></div>
+  </div>
+</div>
+{% endwith %}
+
+<div class="panel mb-3">
+  <div class="panel-head">
+    <h3>Income vs expenses over time</h3>
+    <span class="text-faint" style="font-size:.78rem">Bucketed by {{ report.series.granularity }}</span>
+  </div>
+  <div class="panel-body"><div class="chart-box tall"><canvas id="chart-income-expense"></canvas></div></div>
+</div>
+
+<div class="chart-grid mb-3">
+  <div class="panel">
+    <div class="panel-head"><h3>Where income comes from</h3></div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-income-breakdown"></canvas></div>
+      <ul class="breakdown mt-3">
+        {% for row in report.income_breakdown %}
+          <li>
+            <span class="swatch" style="background:{{ row.colour }}"></span>
+            <span class="truncate">{{ row.label }}</span>
+            <span class="amount">{{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}<span class="pct">{{ row.percent }}%</span></span>
+          </li>
+        {% empty %}
+          <li><span class="text-faint">No income in this period.</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Where money goes</h3></div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-expense-breakdown"></canvas></div>
+      <ul class="breakdown mt-3">
+        {% for row in report.expense_breakdown %}
+          <li>
+            <span class="swatch" style="background:{{ row.colour }}"></span>
+            <span class="truncate">{{ row.label }} <span class="text-faint">({{ row.count }})</span></span>
+            <span class="amount">{{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}<span class="pct">{{ row.percent }}%</span></span>
+          </li>
+        {% empty %}
+          <li><span class="text-faint">No expenses in this period.</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>How families pay</h3>
+      <span class="text-faint" style="font-size:.78rem">Useful for float and cash-handling</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-methods"></canvas></div>
+      <ul class="breakdown mt-3">
+        {% for row in report.payment_methods %}
+          <li>
+            <span class="swatch" style="background:{{ row.colour }}"></span>
+            <span class="truncate">{{ row.label }} <span class="text-faint">({{ row.count }})</span></span>
+            <span class="amount">{{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}<span class="pct">{{ row.percent }}%</span></span>
+          </li>
+        {% empty %}
+          <li><span class="text-faint">No payments in this period.</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Revenue by programme</h3></div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-programmes"></canvas></div>
+      <ul class="breakdown mt-3">
+        {% for row in report.programme_revenue %}
+          <li>
+            <span class="swatch" style="background:{{ row.colour }}"></span>
+            <span class="truncate">{{ row.label }} <span class="text-faint">({{ row.students }} dancers)</span></span>
+            <span class="amount">{{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Debt ageing</h3>
+      <a href="{% url 'finance:invoice_list' %}?status=overdue" class="link-arrow">Chase list <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-ageing"></canvas></div>
+      <ul class="breakdown mt-3">
+        {% for row in report.ageing %}
+          <li>
+            <span class="swatch" style="background:{% if forloop.first %}var(--success){% elif forloop.last %}var(--danger){% else %}var(--warning){% endif %}"></span>
+            <span class="truncate">{{ row.label }} <span class="text-faint">({{ row.count }})</span></span>
+            <span class="amount">{{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{{ report.series|json_script:"data-series" }}
+{{ income_chart|json_script:"data-income" }}
+{{ expense_chart|json_script:"data-expenses" }}
+{{ method_chart|json_script:"data-methods" }}
+{{ programme_chart|json_script:"data-programmes" }}
+{{ ageing_chart|json_script:"data-ageing" }}
+{% endblock %}

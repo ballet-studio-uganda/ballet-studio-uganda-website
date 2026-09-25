@@ -1,0 +1,48 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Payroll</h1><p>{{ CURRENCY }} {{ month_total|floatformat:0|intcomma }} paid this month</p></div>
+  <a href="{% url 'finance:payroll_create' %}" class="btn btn-sm"><i class="fas fa-plus"></i> New entry</a>
+</div>
+
+<div class="alert">
+  <i class="fas fa-circle-info"></i>
+  <div>A payroll entry marked <strong>paid</strong> automatically creates a matching
+    expense under &ldquo;Salaries &amp; wages&rdquo;, so the reports balance.</div>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Staff</th><th>Period</th><th class="money">Gross</th><th class="money">Deductions</th>
+      <th class="money">Net</th><th>Paid</th><th>Method</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for entry in page_obj %}
+        <tr>
+          <td>
+            <span class="row gap-sm">
+              <span class="avatar avatar-sm">{{ entry.staff.user.initials }}</span>
+              <span><strong>{{ entry.staff.user.display_name }}</strong><br>
+                <span class="text-faint" style="font-size:.74rem">{{ entry.staff.job_title }}</span></span>
+            </span>
+          </td>
+          <td>{{ entry.period_start|date:"j M" }} &ndash; {{ entry.period_end|date:"j M Y" }}</td>
+          <td class="money">{{ entry.gross_amount|floatformat:0|intcomma }}</td>
+          <td class="money">{{ entry.deductions|floatformat:0|intcomma }}</td>
+          <td class="money"><strong>{{ CURRENCY }} {{ entry.net_amount|floatformat:0|intcomma }}</strong></td>
+          <td>{{ entry.paid_date|date:"j M Y"|default:"—" }}</td>
+          <td><span class="pill">{{ entry.get_method_display }}</span></td>
+          <td><span class="pill {% if entry.status == 'paid' %}pill-success{% elif entry.status == 'rejected' %}pill-danger{% else %}pill-warning{% endif %}">
+            {{ entry.get_status_display }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8"><div class="empty" style="padding:3rem">
+          <i class="fas fa-sack-dollar"></i><h3>No payroll entries yet</h3></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

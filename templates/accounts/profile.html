@@ -1,0 +1,122 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>My profile</h1><p>How the studio reaches you.</p></div>
+  <a href="{% url 'accounts:profile_edit' %}" class="btn btn-sm"><i class="fas fa-pen"></i> Edit profile</a>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-body center">
+      <span class="avatar avatar-xl" style="margin-inline:auto">
+        {% if user.photo %}<img src="{{ user.photo.url }}" alt="">{% else %}{{ user.initials }}{% endif %}
+      </span>
+      <h2 class="mt-3" style="font-size:1.5rem">{{ user.display_name }}</h2>
+      <span class="pill pill-pink mt-2">{{ user.get_role_display }}</span>
+      {% if user.is_verified %}
+        <div class="mt-2"><span class="pill pill-success"><i class="fas fa-circle-check"></i> Verified</span></div>
+      {% else %}
+        <div class="mt-2"><span class="pill pill-warning">{{ user.get_approval_status_display }}</span></div>
+      {% endif %}
+      <p class="text-faint mt-3" style="font-size:.8rem">Member since {{ user.date_joined|date:"F Y" }}</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Contact details</h3></div>
+    <div class="panel-body">
+      <dl class="doc-meta">
+        <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+        <div><dt>Username</dt><dd>{{ user.username }}</dd></div>
+        <div><dt>Phone</dt><dd>{{ user.phone|default:"—" }}</dd></div>
+        <div><dt>WhatsApp</dt><dd>{{ user.whatsapp|default:"—" }}</dd></div>
+        <div><dt>Address</dt><dd>{{ user.address|default:"—" }}</dd></div>
+        <div><dt>City</dt><dd>{{ user.city|default:"—" }}</dd></div>
+      </dl>
+      <div class="row gap-sm mt-3">
+        <span class="pill {% if user.receives_email %}pill-success{% endif %}">
+          <i class="fas fa-envelope"></i> Email {% if user.receives_email %}on{% else %}off{% endif %}</span>
+        <span class="pill {% if user.receives_sms %}pill-success{% endif %}">
+          <i class="fas fa-comment-sms"></i> SMS {% if user.receives_sms %}on{% else %}off{% endif %}</span>
+      </div>
+      <a href="{% url 'accounts:password_change' %}" class="btn btn-sm btn-outline mt-3"><i class="fas fa-key"></i> Change password</a>
+    </div>
+  </div>
+
+  {% if staff_profile %}
+    <div class="panel">
+      <div class="panel-head"><h3>Staff details</h3></div>
+      <div class="panel-body">
+        <dl class="doc-meta">
+          <div><dt>Staff ID</dt><dd class="mono">{{ staff_profile.staff_id }}</dd></div>
+          <div><dt>Job title</dt><dd>{{ staff_profile.job_title|default:"—" }}</dd></div>
+          <div><dt>Employment</dt><dd>{{ staff_profile.get_employment_type_display }}</dd></div>
+          <div><dt>Joined</dt><dd>{{ staff_profile.date_joined_studio|date:"F Y"|default:"—" }}</dd></div>
+          <div><dt>On website</dt><dd>{{ staff_profile.show_on_website|yesno:"Yes,No" }}</dd></div>
+        </dl>
+        {% if staff_profile.specialism_list %}
+          <div class="row gap-sm mt-3">
+            {% for item in staff_profile.specialism_list %}<span class="pill pill-pink">{{ item }}</span>{% endfor %}
+          </div>
+        {% endif %}
+        {% if staff_profile.classes_taught.exists %}
+          <h4 class="mt-3 mb-2">Classes</h4>
+          <div class="stack">
+            {% for dance_class in staff_profile.classes_taught.all %}
+              <a href="{% url 'academics:class_detail' dance_class.pk %}" class="row-between" style="padding:.6rem;border:1px solid var(--line);border-radius:var(--r-sm)">
+                <span>{{ dance_class.name }}</span><i class="fas fa-chevron-right text-pink"></i>
+              </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if guardian_profile %}
+    <div class="panel">
+      <div class="panel-head"><h3>Family details</h3></div>
+      <div class="panel-body">
+        <dl class="doc-meta">
+          <div><dt>Guardian ID</dt><dd class="mono">{{ guardian_profile.guardian_id }}</dd></div>
+          <div><dt>Occupation</dt><dd>{{ guardian_profile.occupation|default:"—" }}</dd></div>
+          <div><dt>Best contact</dt><dd>{{ guardian_profile.get_preferred_contact_method_display }}</dd></div>
+        </dl>
+        <h4 class="mt-3 mb-2">My dancers</h4>
+        <div class="stack">
+          {% for child in guardian_profile.students %}
+            <a href="{% url 'academics:student_detail' child.pk %}" class="row-between" style="padding:.6rem;border:1px solid var(--line);border-radius:var(--r-sm)">
+              <span class="row gap-sm">
+                <span class="avatar avatar-sm">{{ child.initials }}</span>
+                <span><strong>{{ child.full_name }}</strong><br>
+                  <span class="text-faint" style="font-size:.76rem">{{ child.student_id }} &middot; age {{ child.age }}</span></span>
+              </span>
+              <i class="fas fa-chevron-right text-pink"></i>
+            </a>
+          {% empty %}
+            <p class="text-faint">No dancers linked yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if student_profile %}
+    <div class="panel">
+      <div class="panel-head"><h3>My dancer record</h3></div>
+      <div class="panel-body">
+        <dl class="doc-meta">
+          <div><dt>Student ID</dt><dd class="mono">{{ student_profile.student_id }}</dd></div>
+          <div><dt>Age</dt><dd>{{ student_profile.age }}</dd></div>
+          <div><dt>Status</dt><dd>{{ student_profile.get_status_display }}</dd></div>
+          <div><dt>Joined</dt><dd>{{ student_profile.enrolment_date|date:"F Y" }}</dd></div>
+        </dl>
+        <a href="{% url 'academics:student_detail' student_profile.pk %}" class="btn btn-sm btn-outline mt-3">
+          My full record <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

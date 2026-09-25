@@ -1,0 +1,129 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'dashboard:user_list' %}">People</a><i class="fas fa-chevron-right"></i>
+      <span>{{ person.display_name }}</span>
+    </nav>
+    <div class="row gap-sm">
+      <span class="avatar avatar-lg">
+        {% if person.photo %}<img src="{{ person.photo.url }}" alt="">{% else %}{{ person.initials }}{% endif %}
+      </span>
+      <div>
+        <h1>{{ person.display_name }}</h1>
+        <p>
+          <span class="pill pill-plum">{{ person.get_role_display }}</span>
+          <span class="pill {% if person.approval_status == 'approved' %}pill-success{% elif person.approval_status == 'pending' %}pill-warning{% else %}pill-danger{% endif %}">
+            {{ person.get_approval_status_display }}
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Account details</h3></div>
+    <div class="panel-body">
+      <dl class="doc-meta">
+        <div><dt>Email</dt><dd>{{ person.email }}</dd></div>
+        <div><dt>Username</dt><dd class="mono">{{ person.username }}</dd></div>
+        <div><dt>Phone</dt><dd>{{ person.phone|default:"—" }}</dd></div>
+        <div><dt>WhatsApp</dt><dd>{{ person.whatsapp|default:"—" }}</dd></div>
+        <div><dt>Date of birth</dt><dd>{{ person.date_of_birth|date:"j M Y"|default:"—" }}</dd></div>
+        <div><dt>Address</dt><dd>{{ person.address|default:"—" }}</dd></div>
+        <div><dt>Registered</dt><dd>{{ person.created_at|date:"j F Y, H:i" }}</dd></div>
+        <div><dt>Last seen</dt><dd>{% if person.last_seen %}{{ person.last_seen|timesince }} ago{% else %}Never signed in{% endif %}</dd></div>
+      </dl>
+
+      {% if person.verified_by %}
+        <div class="alert alert-success mt-3">
+          <i class="fas fa-circle-check"></i>
+          <div>{{ person.get_approval_status_display }} by {{ person.verified_by.display_name }}
+            on {{ person.verified_at|date:"j F Y" }}.
+            {% if person.verification_note %}<br><em>{{ person.verification_note }}</em>{% endif %}</div>
+        </div>
+      {% endif %}
+
+      {% if person.staff_profile %}
+        <h4 class="mt-4 mb-2">Staff profile</h4>
+        <dl class="doc-meta">
+          <div><dt>Staff ID</dt><dd class="mono">{{ person.staff_profile.staff_id }}</dd></div>
+          <div><dt>Job title</dt><dd>{{ person.staff_profile.job_title|default:"—" }}</dd></div>
+          <div><dt>Employment</dt><dd>{{ person.staff_profile.get_employment_type_display }}</dd></div>
+        </dl>
+      {% endif %}
+
+      {% if person.guardian_profile %}
+        <h4 class="mt-4 mb-2">Guardian profile</h4>
+        <dl class="doc-meta">
+          <div><dt>Guardian ID</dt><dd class="mono">{{ person.guardian_profile.guardian_id }}</dd></div>
+          <div><dt>Occupation</dt><dd>{{ person.guardian_profile.occupation|default:"—" }}</dd></div>
+        </dl>
+        {% if person.guardian_profile.notes %}
+          <div class="alert mt-2"><i class="fas fa-children"></i>
+            <div style="font-size:.86rem">{{ person.guardian_profile.notes|linebreaks }}</div></div>
+        {% endif %}
+        <h4 class="mt-3 mb-2">Linked dancers</h4>
+        <div class="stack">
+          {% for child in person.guardian_profile.students %}
+            <a href="{% url 'academics:student_detail' child.pk %}" class="row-between"
+               style="padding:.6rem;border:1px solid var(--line);border-radius:var(--r-sm)">
+              <span>{{ child.full_name }} <span class="text-faint mono" style="font-size:.76rem">{{ child.student_id }}</span></span>
+              <i class="fas fa-chevron-right text-pink"></i>
+            </a>
+          {% empty %}
+            <p class="text-faint" style="font-size:.88rem">No dancers linked yet.</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Decision</h3></div>
+    <div class="panel-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="field">
+          <label>What should happen to this account?</label>
+          <div class="stack">
+            {% for radio in form.decision %}
+              <div class="check-row">
+                {{ radio.tag }}
+                <label for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+              </div>
+            {% endfor %}
+          </div>
+          {{ form.decision.errors }}
+        </div>
+
+        {% include 'includes/field.html' with field=form.role %}
+        {% include 'includes/field.html' with field=form.note %}
+
+        <button type="submit" class="btn btn-block btn-lg">Apply decision</button>
+      </form>
+    </div>
+  </div>
+
+  {% if audit %}
+    <div class="panel">
+      <div class="panel-head"><h3>History</h3></div>
+      <div class="panel-body flush">
+        {% for entry in audit %}
+          <div class="note-item">
+            <span class="ico"><i class="fas fa-clock-rotate-left"></i></span>
+            <span>
+              <strong>{{ entry }}</strong>
+              <time>{{ entry.created_at|date:"j M Y, H:i" }}</time>
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

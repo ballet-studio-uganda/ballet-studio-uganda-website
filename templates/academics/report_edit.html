@@ -1,0 +1,108 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'academics:report_list' %}">Reports</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'academics:report_class' dance_class.pk period.pk %}">{{ dance_class.name }}</a><i class="fas fa-chevron-right"></i>
+      <span>{{ student.full_name }}</span>
+    </nav>
+    <div class="row gap-sm">
+      <span class="avatar avatar-lg">
+        {% if student.photo %}<img src="{{ student.photo.url }}" alt="">{% else %}{{ student.initials }}{% endif %}
+      </span>
+      <div>
+        <h1>{{ student.full_name }}</h1>
+        <p>{{ period.name }} &middot; {{ dance_class.name }} &middot;
+          <span class="pill {% if report.status == 'published' %}pill-success{% elif report.status == 'submitted' %}pill-info{% else %}pill-warning{% endif %}">
+            {{ report.get_status_display }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="row gap-sm">
+    {% if attendance.rate is not None %}
+      <span class="pill {% if attendance.rate >= 85 %}pill-success{% elif attendance.rate >= 70 %}pill-warning{% else %}pill-danger{% endif %}">
+        <i class="fas fa-user-check"></i> {{ attendance.rate }}% attendance
+      </span>
+    {% endif %}
+  </div>
+</div>
+
+{% if period.instructions %}
+  <div class="alert"><i class="fas fa-circle-info"></i><div>{{ period.instructions }}</div></div>
+{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <div class="chart-grid wide-first">
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Skill rubric</h3>
+        <span class="text-faint" style="font-size:.8rem">Score each skill against what you expect of this dancer at this stage</span>
+      </div>
+      <div class="panel-body">
+        {{ formset.management_form }}
+        {% regroup formset by instance.skill.category as categories %}
+        {% for category in categories %}
+          <div class="rubric-category" style="--cat-colour:{{ category.grouper.colour }}">
+            <h4><i class="fas {{ category.grouper.icon|default:'fa-star' }}"></i> {{ category.grouper.name }}</h4>
+            {% for subform in category.list %}
+              <div class="rubric-row">
+                {% for hidden in subform.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="rubric-skill">
+                  <strong>{{ subform.instance.skill.name }}</strong>
+                  {% if subform.instance.skill.description %}
+                    <span>{{ subform.instance.skill.description }}</span>
+                  {% endif %}
+                </div>
+                <div class="row gap-sm">
+                  {{ subform.score }}
+                  <span class="text-faint" style="font-size:.78rem">/ {{ subform.instance.skill.max_score }}</span>
+                </div>
+                {{ subform.comment }}
+                {% if subform.errors %}<div style="grid-column:1/-1">{{ subform.errors }}</div>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% empty %}
+          <div class="empty">
+            <i class="fas fa-list-check"></i>
+            <h3>No skills configured</h3>
+            <p>Add skill categories and skills in the Django admin under
+              <strong>Academics &rarr; Skill categories</strong>.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Written feedback</h3></div>
+      <div class="panel-body">
+        {% include 'includes/form.html' %}
+      </div>
+      <div class="panel-foot">
+        <div class="row gap-sm">
+          <button type="submit" name="action" value="draft" class="btn btn-outline">Save draft</button>
+          <button type="submit" name="action" value="submit" class="btn">
+            <i class="fas fa-check"></i> Submit report
+          </button>
+        </div>
+        <p class="helptext mt-2">Submitting marks it ready; an administrator publishes it to the family.</p>
+      </div>
+    </div>
+
+    {% if history.labels %}
+      <div class="panel">
+        <div class="panel-head"><h3>Previous reports</h3></div>
+        <div class="panel-body"><div class="chart-box short"><canvas id="chart-trend"></canvas></div></div>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{{ history|json_script:"data-trend" }}
+{% endblock %}

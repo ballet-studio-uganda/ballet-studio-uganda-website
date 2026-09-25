@@ -1,0 +1,98 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head no-print">
+  <div><h1>My fee statement</h1><p>Everything invoiced and paid on your account.</p></div>
+  <button onclick="window.print()" class="btn btn-sm btn-outline"><i class="fas fa-print"></i> Print</button>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-file-invoice"></i> Total billed</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ statement.total_billed|floatformat:0|intcomma }}</div>
+  </div>
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-circle-check"></i> Total paid</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ statement.total_paid|floatformat:0|intcomma }}</div>
+  </div>
+  <div class="kpi {% if statement.balance > 0 %}kpi-red{% else %}kpi-green{% endif %}">
+    <div class="kpi-label"><i class="fas fa-scale-balanced"></i> Balance</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ statement.balance|floatformat:0|intcomma }}</div>
+    <div class="kpi-note">
+      {% if statement.overdue_count %}<span class="trend trend-down">{{ statement.overdue_count }} overdue</span>
+      {% elif statement.balance <= 0 %}<span class="trend trend-up">All settled &mdash; thank you</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="panel mb-3">
+  <div class="panel-head"><h3>Invoices</h3></div>
+  <div class="panel-body flush">
+    <div class="table-wrap" style="border:none">
+      <table class="table">
+        <thead><tr><th>Invoice</th><th>Dancer</th><th>Issued</th><th>Due</th><th>Status</th>
+          <th class="money">Total</th><th class="money">Paid</th><th class="money">Balance</th></tr></thead>
+        <tbody>
+          {% for invoice in statement.invoices %}
+            <tr onclick="window.location='{% url 'finance:invoice_detail' invoice.pk %}'" style="cursor:pointer">
+              <td class="mono">{{ invoice.number }}</td>
+              <td>{{ invoice.student.display_name }}</td>
+              <td>{{ invoice.issue_date|date:"j M Y" }}</td>
+              <td>{{ invoice.due_date|date:"j M Y" }}</td>
+              <td>
+                {% if invoice.is_overdue %}<span class="pill pill-danger">{{ invoice.days_overdue }} days late</span>
+                {% else %}<span class="pill {% if invoice.is_settled %}pill-success{% else %}pill-warning{% endif %}">{{ invoice.get_status_display }}</span>{% endif %}
+              </td>
+              <td class="money">{{ invoice.total_amount|floatformat:0|intcomma }}</td>
+              <td class="money">{{ invoice.amount_paid|floatformat:0|intcomma }}</td>
+              <td class="money" style="color:{% if invoice.balance > 0 %}var(--danger){% else %}var(--success){% endif %}">
+                {{ invoice.balance|floatformat:0|intcomma }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8"><div class="empty" style="padding:3rem">
+              <i class="fas fa-file-invoice"></i><h3>No invoices yet</h3>
+              <p>Invoices appear here once the studio raises them.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h3>Payments recorded</h3></div>
+  <div class="panel-body flush">
+    <div class="table-wrap" style="border:none">
+      <table class="table">
+        <thead><tr><th>Receipt</th><th>Date &amp; time</th><th>Dancer</th><th>Method</th>
+          <th>Transaction ID</th><th class="money">Amount</th></tr></thead>
+        <tbody>
+          {% for payment in payments %}
+            <tr onclick="window.location='{% url 'finance:payment_detail' payment.pk %}'" style="cursor:pointer">
+              <td class="mono">{{ payment.receipt_number }}</td>
+              <td>{{ payment.payment_date|date:"j M Y" }}
+                {% if payment.payment_time %}<br><span class="text-faint" style="font-size:.74rem">{{ payment.payment_time|time:"H:i" }}</span>{% endif %}</td>
+              <td>{{ payment.student.display_name|default:"—" }}</td>
+              <td><span class="pill">{{ payment.get_method_display }}</span></td>
+              <td class="mono" style="font-size:.76rem">{{ payment.transaction_id|default:"—" }}</td>
+              <td class="money">{{ CURRENCY }} {{ payment.amount|floatformat:0|intcomma }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6"><div class="empty" style="padding:2.5rem">
+              <i class="fas fa-receipt"></i><p>No payments recorded yet.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel-foot">
+    <p class="text-soft" style="font-size:.85rem">
+      <i class="fas fa-circle-info text-pink"></i>
+      Payments are recorded by studio staff once the money is received. If something you
+      have paid is not showing here after a couple of days, please contact the office with
+      your transaction ID.
+    </p>
+  </div>
+</div>
+{% endblock %}

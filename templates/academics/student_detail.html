@@ -1,0 +1,288 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    {% if is_staff_view %}
+      <nav class="crumbs" style="color:var(--text-faint)">
+        <a href="{% url 'academics:student_list' %}">Dancers</a><i class="fas fa-chevron-right"></i><span>{{ student.full_name }}</span>
+      </nav>
+    {% endif %}
+    <div class="row gap-sm">
+      <span class="avatar avatar-lg">
+        {% if student.photo %}<img src="{{ student.photo.url }}" alt="">{% else %}{{ student.initials }}{% endif %}
+      </span>
+      <div>
+        <h1>{{ student.full_name }}</h1>
+        <p>{{ student.student_id }} &middot; age {{ student.age }} &middot;
+           <span class="pill {% if student.status == 'active' %}pill-success{% else %}pill-warning{% endif %}">{{ student.get_status_display }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+  {% if user.is_management %}
+    <div class="row gap-sm">
+      <a href="{% url 'academics:student_edit' student.pk %}" class="btn btn-sm btn-outline"><i class="fas fa-pen"></i> Edit</a>
+      <a href="{% url 'academics:enrol_student' student.pk %}" class="btn btn-sm btn-outline"><i class="fas fa-plus"></i> Enrol</a>
+      <a href="{% url 'finance:invoice_create_for' student.pk %}" class="btn btn-sm"><i class="fas fa-file-invoice-dollar"></i> Invoice</a>
+    </div>
+  {% endif %}
+</div>
+
+{% if student.needs_health_watch and is_staff_view %}
+  <div class="awareness">
+    <h4><i class="fas fa-ribbon"></i> Health note</h4>
+    <p>This dancer has a sickle cell status on file ({{ student.get_sickle_cell_status_display }}).
+       Plan hydration, rest breaks and safe exertion levels accordingly.
+       {% if student.medical_notes %}<br><strong>Notes:</strong> {{ student.medical_notes }}{% endif %}</p>
+  </div>
+{% endif %}
+
+<div class="kpi-grid">
+  <div class="kpi {% if attendance.rate >= 85 %}kpi-green{% elif attendance.rate >= 70 %}kpi-gold{% else %}kpi-red{% endif %}">
+    <div class="kpi-label"><i class="fas fa-user-check"></i> Attendance</div>
+    <div class="kpi-value">{% if attendance.rate is not None %}{{ attendance.rate }}<small>%</small>{% else %}&mdash;{% endif %}</div>
+    <div class="kpi-note"><span>{{ attendance.attended }} of {{ attendance.total }} sessions</span></div>
+  </div>
+  <div class="kpi kpi-pink">
+    <div class="kpi-label"><i class="fas fa-shoe-prints"></i> Classes</div>
+    <div class="kpi-value">{{ enrolments|length }}</div>
+  </div>
+  <div class="kpi kpi-gold">
+    <div class="kpi-label"><i class="fas fa-chart-line"></i> Reports</div>
+    <div class="kpi-value">{{ reports|length }}</div>
+  </div>
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-calendar-check"></i> With us since</div>
+    <div class="kpi-value" style="font-size:1.2rem">{{ student.enrolment_date|date:"M Y" }}</div>
+  </div>
+</div>
+
+<div class="chart-grid wide-first mb-3">
+  <div class="panel">
+    <div class="panel-head"><h3>Progress over time</h3></div>
+    <div class="panel-body"><div class="chart-box"><canvas id="chart-trend"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Attendance by month</h3></div>
+    <div class="panel-body"><div class="chart-box short"><canvas id="chart-attendance"></canvas></div></div>
+  </div>
+</div>
+
+<div class="chart-grid">
+
+  <div class="panel">
+    <div class="panel-head"><h3>Classes</h3></div>
+    <div class="panel-body flush">
+      {% for enrolment in enrolments %}
+        <div class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ enrolment.dance_class.program.accent_colour }}">
+              <i class="fas fa-shoe-prints" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ enrolment.dance_class.name }}</strong>
+              <span>{{ enrolment.dance_class.term }} &middot; {{ enrolment.dance_class.schedule_display }}</span>
+            </div>
+          </div>
+          <span class="pill {% if enrolment.status == 'active' %}pill-success{% else %}pill{% endif %}">{{ enrolment.get_status_display }}</span>
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-shoe-prints"></i><p>Not enrolled in any class yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Progress reports</h3></div>
+    <div class="panel-body flush">
+      {% for report in reports %}
+        <a href="{% url 'academics:report_detail' report.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:var(--plum)"><i class="fas fa-chart-line" style="font-size:.7rem"></i></span>
+            <div>
+              <strong>{{ report.period.name }}</strong>
+              <span>{{ report.dance_class.name }}{% if report.teacher %} &middot; {{ report.teacher.user.display_name }}{% endif %}</span>
+            </div>
+          </div>
+          <div class="row gap-sm">
+            {% if report.average_percent %}<strong>{{ report.average_percent|floatformat:0 }}%</strong>{% endif %}
+            <span class="pill {% if report.status == 'published' %}pill-success{% elif report.status == 'submitted' %}pill-info{% else %}pill-warning{% endif %}">
+              {{ report.get_status_display }}
+            </span>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-chart-line"></i><p>No reports yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Recent attendance</h3></div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Date</th><th>Class</th><th>Mark</th></tr></thead>
+          <tbody>
+            {% for mark in recent_marks %}
+              <tr>
+                <td>{{ mark.session.date|date:"D j M" }}</td>
+                <td>{{ mark.session.dance_class.name|truncatechars:22 }}</td>
+                <td>
+                  <span class="pill {% if mark.status == 'present' %}pill-success{% elif mark.status == 'late' %}pill-warning{% elif mark.status == 'excused' %}pill-info{% else %}pill-danger{% endif %}">
+                    {{ mark.get_status_display }}
+                  </span>
+                  {% if mark.remarks %}<br><span class="text-faint" style="font-size:.72rem">{{ mark.remarks }}</span>{% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3"><div class="empty" style="padding:2rem"><i class="fas fa-clipboard"></i><p>No attendance recorded yet.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if is_staff_view %}
+    <div class="panel">
+      <div class="panel-head"><h3>Guardians</h3>
+        {% if user.is_management %}
+          <a href="{% url 'academics:student_add_guardian' student.pk %}" class="btn btn-sm btn-quiet"><i class="fas fa-plus"></i> Link</a>
+        {% endif %}
+      </div>
+      <div class="panel-body flush">
+        {% for link in student.guardian_links.all %}
+          <a href="{% url 'dashboard:guardian_detail' link.guardian.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+            <div class="register-who">
+              <span class="avatar avatar-sm">{{ link.guardian.user.initials }}</span>
+              <div>
+                <strong>{{ link.guardian.user.display_name }}</strong>
+                <span>{{ link.get_relationship_display }} &middot; {{ link.guardian.user.phone|default:link.guardian.user.email }}</span>
+              </div>
+            </div>
+            <div class="row gap-sm">
+              {% if link.is_primary %}<span class="pill pill-pink">Primary</span>{% endif %}
+              {% if link.receives_invoices %}<span class="pill pill-gold">Billing</span>{% endif %}
+            </div>
+          </a>
+        {% empty %}
+          <div class="empty" style="padding:2.5rem 1rem">
+            <i class="fas fa-user-group"></i>
+            <p>No guardian linked to this dancer yet.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Dancer details</h3></div>
+      <div class="panel-body">
+        <dl class="doc-meta">
+          <div><dt>Date of birth</dt><dd>{{ student.date_of_birth|date:"j F Y" }}</dd></div>
+          <div><dt>Gender</dt><dd>{{ student.get_gender_display }}</dd></div>
+          <div><dt>Day school</dt><dd>{{ student.school_name|default:"—" }}</dd></div>
+          <div><dt>Leotard</dt><dd>{{ student.leotard_size|default:"—" }}</dd></div>
+          <div><dt>Shoe size</dt><dd>{{ student.shoe_size|default:"—" }}</dd></div>
+          <div><dt>Photo consent</dt><dd>{{ student.photo_consent|yesno:"Given,Not given" }}</dd></div>
+          <div><dt>Media consent</dt><dd>{{ student.media_consent|yesno:"Given,Not given" }}</dd></div>
+        </dl>
+        {% if student.allergies or student.medical_conditions %}
+          <div class="alert alert-warning mt-3">
+            <i class="fas fa-notes-medical"></i>
+            <div>
+              {% if student.allergies %}<strong>Allergies:</strong> {{ student.allergies }}<br>{% endif %}
+              {% if student.medical_conditions %}<strong>Conditions:</strong> {{ student.medical_conditions }}{% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Notes</h3></div>
+      <div class="panel-body">
+        {% if note_form %}
+          <form method="post" action="{% url 'academics:student_add_note' student.pk %}" class="mb-3">
+            {% csrf_token %}
+            <div class="form-grid">
+              {% include 'includes/field.html' with field=note_form.kind %}
+              {% include 'includes/field.html' with field=note_form.date %}
+            </div>
+            {% include 'includes/field.html' with field=note_form.title %}
+            {% include 'includes/field.html' with field=note_form.body %}
+            {% include 'includes/field.html' with field=note_form.visible_to_guardian %}
+            <button class="btn btn-sm">Add note</button>
+          </form>
+        {% endif %}
+
+        <div class="stack">
+          {% for note in notes %}
+            <div style="padding:.85rem;border-left:3px solid var(--pink);background:var(--paper-warm);border-radius:0 var(--r-sm) var(--r-sm) 0">
+              <div class="row-between">
+                <strong style="font-size:.92rem">{{ note.title }}</strong>
+                <span class="pill">{{ note.get_kind_display }}</span>
+              </div>
+              <p style="font-size:.88rem" class="mt-1">{{ note.body }}</p>
+              <span class="text-faint" style="font-size:.74rem">
+                {{ note.date|date:"j M Y" }}{% if note.author %} &middot; {{ note.author.display_name }}{% endif %}
+                {% if note.visible_to_guardian %}&middot; <i class="fas fa-eye"></i> visible to guardians{% endif %}
+              </span>
+            </div>
+          {% empty %}
+            <p class="text-faint">No notes recorded.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% if invoices %}
+      <div class="panel">
+        <div class="panel-head"><h3>Invoices</h3></div>
+        <div class="panel-body flush">
+          <div class="table-wrap" style="border:none">
+            <table class="table">
+              <thead><tr><th>Invoice</th><th>Issued</th><th>Status</th><th class="money">Balance</th></tr></thead>
+              <tbody>
+                {% for invoice in invoices %}
+                  <tr onclick="window.location='{% url 'finance:invoice_detail' invoice.pk %}'" style="cursor:pointer">
+                    <td class="mono">{{ invoice.number }}</td>
+                    <td>{{ invoice.issue_date|date:"j M Y" }}</td>
+                    <td><span class="pill {% if invoice.is_settled %}pill-success{% elif invoice.is_overdue %}pill-danger{% else %}pill-warning{% endif %}">{{ invoice.get_status_display }}</span></td>
+                    <td class="money">{{ CURRENCY }} {{ invoice.balance|floatformat:0|intcomma }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {% if recital_roles %}
+    <div class="panel">
+      <div class="panel-head"><h3>On stage</h3></div>
+      <div class="panel-body flush">
+        {% for role in recital_roles %}
+          <div class="register-row" style="grid-template-columns:1fr auto">
+            <div class="register-who">
+              <span class="avatar avatar-sm" style="background:var(--gold);color:var(--ink)"><i class="fas fa-star" style="font-size:.7rem"></i></span>
+              <div>
+                <strong>{{ role.performance.title }}</strong>
+                <span>{{ role.performance.recital.title }} ({{ role.performance.recital.year }})</span>
+              </div>
+            </div>
+            <span class="pill pill-gold">{{ role.role_name|default:role.get_role_type_display }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{{ progress|json_script:"data-trend" }}
+{{ attendance_trend|json_script:"data-attendance" }}
+{% endblock %}

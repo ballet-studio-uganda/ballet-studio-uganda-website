@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>About</span></nav>
+    <span class="kicker">Since {{ studio.founded_year }}</span>
+    <h1>The studio</h1>
+    <p class="lede">{{ studio.tagline }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="split">
+      <div data-reveal="left">
+        <h2>Our story</h2>
+        <div class="rule mb-3"></div>
+        <p class="lede">{{ studio.about_short }}</p>
+        {% if studio.about_full %}<div class="mt-3">{{ studio.about_full|linebreaks }}</div>{% endif %}
+      </div>
+      <div class="split-media" data-reveal="right">
+        {% if studio.og_image %}<img src="{{ studio.og_image.url }}" alt="Our studio">
+        {% else %}<div class="media-placeholder"><i class="fas fa-building-columns"></i></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if studio.mission or studio.vision or studio.value_list %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="grid grid-2">
+      {% if studio.mission %}
+      <div class="card card-flat" data-reveal>
+        <div class="card-body">
+          <span class="kicker">Our mission</span>
+          <p class="lede">{{ studio.mission }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if studio.vision %}
+      <div class="card card-flat" data-reveal>
+        <div class="card-body">
+          <span class="kicker">Our vision</span>
+          <p class="lede">{{ studio.vision }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if studio.value_list %}
+    <div class="section-head center mt-4" data-reveal><h2>What we hold to</h2><div class="rule"></div></div>
+    <div class="grid grid-4">
+      {% for value in studio.value_list %}
+        <div class="card card-flat center" data-reveal>
+          <div class="card-body">
+            <span class="script text-pink" style="font-size:2.6rem;line-height:1">{{ value }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if studio.sickle_cell_statement %}
+<section class="section">
+  <div class="wrap wrap-tight">
+    <div class="awareness" data-reveal>
+      <h4><i class="fas fa-ribbon"></i> Why we dance for sickle cell awareness</h4>
+      <p>{{ studio.sickle_cell_statement }}</p>
+      <a href="{% url 'events:recital' %}" class="link-arrow mt-3">The annual recital <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if faculty %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="section-head center" data-reveal><span class="kicker">The people</span><h2>Our faculty</h2><div class="rule"></div></div>
+    <div class="grid grid-4">
+      {% for member in faculty %}
+        <div class="card card-flat person-card" data-reveal>
+          <div class="card-body">
+            <div class="card-media">
+              {% if member.user.photo %}<img src="{{ member.user.photo.url }}" alt="{{ member.user.display_name }}" loading="lazy">
+              {% else %}<div class="media-placeholder"><i class="fas fa-user"></i></div>{% endif %}
+            </div>
+            <h3>{{ member.user.display_name }}</h3>
+            <span class="person-role">{{ member.job_title }}</span>
+            {% if member.short_bio %}<p>{{ member.short_bio }}</p>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="center mt-4"><a href="{% url 'website:faculty' %}" class="btn btn-outline">Meet the whole team</a></div>
+  </div>
+</section>
+{% endif %}
+
+{% if partners %}
+<section class="section-sm">
+  <div class="wrap center">
+    <span class="kicker">With thanks to</span>
+    <div class="row gap-lg mt-2" style="justify-content:center">
+      {% for partner in partners %}<span class="pill pill-plum">{{ partner.name }}</span>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section section-plum">
+  <div class="wrap wrap-tight center" data-reveal>
+    <h2>Come and see for yourself</h2>
+    <p class="lede mt-2" style="color:rgba(255,255,255,.78);margin-inline:auto">Book a trial class &mdash; no charge, no obligation.</p>
+    <div class="row mt-3" style="justify-content:center">
+      <a href="{% url 'website:enrol' %}" class="btn btn-lg">Enrol a dancer</a>
+      <a href="{% url 'website:contact' %}" class="btn btn-lg btn-ghost">Get in touch</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

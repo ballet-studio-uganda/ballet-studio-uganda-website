@@ -1,0 +1,137 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'academics:class_list' %}">Classes</a><i class="fas fa-chevron-right"></i><span>{{ dance_class.name }}</span>
+    </nav>
+    <h1>{{ dance_class.name }}</h1>
+    <p>{{ dance_class.program.name }} &middot; {{ dance_class.term }}</p>
+  </div>
+  <div class="row gap-sm">
+    {% if can_manage %}
+      <a href="{% url 'academics:class_edit' dance_class.pk %}" class="btn btn-sm btn-outline"><i class="fas fa-pen"></i> Edit</a>
+      <a href="{% url 'academics:generate_sessions' dance_class.pk %}" class="btn btn-sm"><i class="fas fa-calendar-plus"></i> Generate sessions</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-pink">
+    <div class="kpi-label"><i class="fas fa-users"></i> Enrolled</div>
+    <div class="kpi-value">{{ dance_class.enrolled_count }} <small>/ {{ dance_class.capacity }}</small></div>
+    <div class="kpi-note"><span>{{ dance_class.places_left }} place{{ dance_class.places_left|pluralize }} left</span></div>
+  </div>
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-user-check"></i> Attendance rate</div>
+    <div class="kpi-value">{% if attendance_rate is not None %}{{ attendance_rate }}<small>%</small>{% else %}&mdash;{% endif %}</div>
+  </div>
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-calendar-days"></i> Sessions</div>
+    <div class="kpi-value">{{ dance_class.sessions.count }}</div>
+    <div class="kpi-note"><span>this term</span></div>
+  </div>
+  <div class="kpi kpi-gold">
+    <div class="kpi-label"><i class="fas fa-chalkboard-user"></i> Taught by</div>
+    <div class="kpi-value" style="font-size:1.1rem">{{ dance_class.teacher_names }}</div>
+    {% if dance_class.studio %}<div class="kpi-note"><span>{{ dance_class.studio.name }}</span></div>{% endif %}
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Class list</h3>
+      <span class="pill">{{ enrolments|length }}</span>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Dancer</th><th>ID</th><th>Age</th><th class="shrink"></th></tr></thead>
+          <tbody>
+            {% for enrolment in enrolments %}
+              <tr onclick="window.location='{% url 'academics:student_detail' enrolment.student.pk %}'" style="cursor:pointer">
+                <td>
+                  <span class="row gap-sm">
+                    <span class="avatar avatar-sm">
+                      {% if enrolment.student.photo %}<img src="{{ enrolment.student.photo.url }}" alt="">{% else %}{{ enrolment.student.initials }}{% endif %}
+                    </span>
+                    <span>
+                      <strong>{{ enrolment.student.full_name }}</strong>
+                      {% if enrolment.student.needs_health_watch %}
+                        <i class="fas fa-ribbon text-pink" title="Health note on file — see the dancer's record"></i>
+                      {% endif %}
+                    </span>
+                  </span>
+                </td>
+                <td class="mono">{{ enrolment.student.student_id }}</td>
+                <td class="num">{{ enrolment.student.age }}</td>
+                <td class="shrink"><i class="fas fa-chevron-right text-faint"></i></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="padding:2rem"><i class="fas fa-user-plus"></i><p>No dancers enrolled yet.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Sessions</h3>
+      <a href="{% url 'academics:register_list' %}" class="link-arrow">Registers <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Date</th><th>Time</th><th>Status</th><th class="shrink"></th></tr></thead>
+          <tbody>
+            {% for session in sessions %}
+              <tr>
+                <td>{{ session.date|date:"D j M" }}</td>
+                <td>{{ session.start_time|time:"H:i" }}</td>
+                <td>
+                  {% if session.register_taken %}<span class="pill pill-success">Register taken</span>
+                  {% elif session.needs_register %}<span class="pill pill-warning">Due</span>
+                  {% elif session.status == 'cancelled' %}<span class="pill pill-danger">Cancelled</span>
+                  {% else %}<span class="pill">Scheduled</span>{% endif %}
+                </td>
+                <td class="shrink">
+                  <a href="{% url 'academics:register' session.pk %}" class="btn btn-sm btn-quiet">
+                    {% if session.register_taken %}View{% else %}Mark{% endif %}
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="padding:2rem">
+                <i class="fas fa-calendar-plus"></i>
+                <p>No sessions yet.
+                  {% if can_manage %}<a href="{% url 'academics:generate_sessions' dance_class.pk %}" class="text-pink">Generate them from the timetable</a>.{% endif %}
+                </p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if waitlist %}
+    <div class="panel">
+      <div class="panel-head"><h3>Waiting list</h3><span class="pill pill-warning">{{ waitlist|length }}</span></div>
+      <div class="panel-body flush">
+        {% for enrolment in waitlist %}
+          <div class="register-row" style="grid-template-columns:1fr auto">
+            <div class="register-who">
+              <span class="avatar avatar-sm">{{ enrolment.student.initials }}</span>
+              <div><strong>{{ enrolment.student.full_name }}</strong>
+                <span>waiting since {{ enrolment.date_enrolled|date:"j M" }}</span></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

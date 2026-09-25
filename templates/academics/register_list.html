@@ -1,0 +1,66 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Registers</h1><p>Mark who was in the room.</p></div>
+</div>
+
+{% if outstanding %}
+  <div class="alert alert-warning">
+    <i class="fas fa-clipboard-list"></i>
+    <div><strong>{{ outstanding|length }} register{{ outstanding|length|pluralize }} outstanding.</strong>
+      Marking them keeps attendance reports and progress reports accurate.</div>
+  </div>
+{% endif %}
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Waiting to be marked</h3><span class="pill pill-warning">{{ outstanding|length }}</span></div>
+    <div class="panel-body flush">
+      {% for session in outstanding %}
+        <a href="{% url 'academics:register' session.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ session.dance_class.program.accent_colour }}">
+              <i class="fas fa-clipboard" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ session.dance_class.name }}</strong>
+              <span>{{ session.date|date:"l j M" }} &middot; {{ session.start_time|time:"H:i" }}</span>
+            </div>
+          </div>
+          <span class="btn btn-sm">Mark register</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:3rem 1rem">
+          <i class="fas fa-circle-check"></i>
+          <h3>All caught up</h3>
+          <p>Every register in the last month has been taken.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Recently marked</h3></div>
+    <div class="panel-body flush">
+      {% for session in recent %}
+        <a href="{% url 'academics:register' session.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:var(--success)">
+              <i class="fas fa-check" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ session.dance_class.name }}</strong>
+              <span>{{ session.date|date:"j M" }}
+                {% if session.register_taken_by %}&middot; by {{ session.register_taken_by.first_name }}{% endif %}</span>
+            </div>
+          </div>
+          <i class="fas fa-chevron-right text-faint"></i>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-clipboard"></i><p>No registers taken yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

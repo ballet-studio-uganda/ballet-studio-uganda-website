@@ -1,0 +1,89 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>{{ page_title }}</h1>
+    <p>Health details are optional and confidential &mdash; shared only with teaching staff.</p>
+  </div>
+  <a href="{% url 'academics:student_list' %}" class="btn btn-sm btn-quiet">Cancel</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate style="max-width:900px">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i>
+      <div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>
+  {% endif %}
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">The dancer</div>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.first_name %}
+      {% include 'includes/field.html' with field=form.middle_name %}
+      {% include 'includes/field.html' with field=form.last_name %}
+      {% include 'includes/field.html' with field=form.preferred_name %}
+      {% include 'includes/field.html' with field=form.date_of_birth %}
+      {% include 'includes/field.html' with field=form.gender %}
+      {% include 'includes/field.html' with field=form.status %}
+      {% include 'includes/field.html' with field=form.enrolment_date %}
+    </div>
+    {% include 'includes/field.html' with field=form.photo %}
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Background</div>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.school_name %}
+      {% include 'includes/field.html' with field=form.how_heard_about_us %}
+    </div>
+    {% include 'includes/field.html' with field=form.home_address %}
+    {% include 'includes/field.html' with field=form.previous_dance_experience %}
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Wardrobe (for the recital)</div>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.height_cm %}
+      {% include 'includes/field.html' with field=form.leotard_size %}
+      {% include 'includes/field.html' with field=form.shoe_size %}
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Health &mdash; confidential</div>
+    <p class="helptext mb-3">
+      All of this is optional. Recording a sickle cell status helps teachers plan hydration
+      and rest breaks safely; leave it as &ldquo;not disclosed&rdquo; if the family prefers.
+    </p>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.blood_group %}
+      {% include 'includes/field.html' with field=form.sickle_cell_status %}
+      {% include 'includes/field.html' with field=form.doctor_name %}
+      {% include 'includes/field.html' with field=form.doctor_phone %}
+    </div>
+    {% include 'includes/field.html' with field=form.medical_conditions %}
+    {% include 'includes/field.html' with field=form.allergies %}
+    {% include 'includes/field.html' with field=form.medication %}
+    {% include 'includes/field.html' with field=form.medical_notes %}
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Consents</div>
+    {% include 'includes/field.html' with field=form.photo_consent %}
+    {% include 'includes/field.html' with field=form.media_consent %}
+    {% include 'includes/field.html' with field=form.medical_treatment_consent %}
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Internal notes</div>
+    {% include 'includes/field.html' with field=form.notes %}
+  </fieldset>
+
+  <div class="row">
+    <button type="submit" class="btn btn-lg">Save dancer</button>
+    <a href="{% url 'academics:student_list' %}" class="btn btn-lg btn-quiet">Cancel</a>
+  </div>
+</form>
+{% endblock %}

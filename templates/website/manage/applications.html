@@ -1,0 +1,62 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Enrolment enquiries</h1><p>{{ new_count }} new enquir{{ new_count|pluralize:"y,ies" }} to follow up.</p></div>
+  <a href="{% url 'academics:student_create' %}" class="btn btn-sm">
+    <i class="fas fa-user-plus"></i> Create a dancer record
+  </a>
+</div>
+
+<div class="row gap-sm mb-3">
+  <a href="{% url 'website:applications' %}" class="pill {% if not active_status %}pill-pink{% endif %}">All</a>
+  {% for value, label in statuses %}
+    <a href="?status={{ value }}" class="pill {% if active_status == value %}pill-pink{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Dancer</th><th class="num">Age</th><th>Programme</th><th>Guardian</th>
+      <th>Contact</th><th>Received</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for application in page_obj %}
+        <tr>
+          <td>
+            <strong>{{ application.student_full_name }}</strong>
+            {% if application.created_student %}
+              <br><a href="{% url 'academics:student_detail' application.created_student.pk %}" class="text-pink" style="font-size:.76rem">
+                <i class="fas fa-link"></i> {{ application.created_student.student_id }}</a>
+            {% endif %}
+          </td>
+          <td class="num">{{ application.student_age }}</td>
+          <td>{{ application.program.name|default:"Not sure yet" }}</td>
+          <td>{{ application.guardian_name }}
+            {% if application.guardian_relationship %}<br><span class="text-faint" style="font-size:.74rem">{{ application.guardian_relationship }}</span>{% endif %}</td>
+          <td>
+            <a href="mailto:{{ application.guardian_email }}" class="text-pink">{{ application.guardian_email }}</a><br>
+            <a href="tel:{{ application.guardian_phone }}" class="text-faint" style="font-size:.76rem">{{ application.guardian_phone }}</a>
+          </td>
+          <td>{{ application.created_at|date:"j M Y" }}<br>
+            <span class="text-faint" style="font-size:.74rem">{{ application.created_at|timesince }} ago</span></td>
+          <td>
+            <span class="pill {% if application.status == 'accepted' %}pill-success{% elif application.status == 'declined' %}pill-danger{% elif application.status == 'new' %}pill-warning{% else %}pill-info{% endif %}">
+              {{ application.get_status_display }}
+            </span>
+            <br><a href="/django-admin/academics/enrolmentapplication/{{ application.pk }}/change/"
+                   class="text-faint" style="font-size:.72rem">Update &rarr;</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7"><div class="empty" style="padding:4rem">
+          <i class="fas fa-clipboard-question"></i>
+          <h3>No enquiries yet</h3>
+          <p>Enquiries from the website enrolment form appear here.</p>
+        </div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

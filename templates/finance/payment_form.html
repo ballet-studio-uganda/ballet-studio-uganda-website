@@ -1,0 +1,83 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Record a payment</h1>
+    <p>Enter the payment exactly as it happened &mdash; the date and time on the SMS
+       or slip, not now.</p>
+  </div>
+  <a href="{% url 'finance:payment_list' %}" class="btn btn-sm btn-quiet">Cancel</a>
+</div>
+
+{% if invoice %}
+  <div class="alert">
+    <i class="fas fa-file-invoice-dollar"></i>
+    <div>
+      Applying to invoice <strong class="mono">{{ invoice.number }}</strong> for
+      <strong>{{ invoice.student.full_name }}</strong> &mdash;
+      balance {{ CURRENCY }} {{ invoice.balance|floatformat:0|intcomma }} of
+      {{ CURRENCY }} {{ invoice.total_amount|floatformat:0|intcomma }}.
+    </div>
+  </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate style="max-width:820px">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i>
+      <div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>
+  {% endif %}
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">The payment</div>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.amount %}
+      {% include 'includes/field.html' with field=form.method %}
+      {% include 'includes/field.html' with field=form.payment_date %}
+      {% include 'includes/field.html' with field=form.payment_time %}
+    </div>
+    {% include 'includes/field.html' with field=form.transaction_id %}
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Applied to</div>
+    <div class="form-grid">
+      {% if not invoice %}{% include 'includes/field.html' with field=form.invoice %}{% endif %}
+      {% include 'includes/field.html' with field=form.student %}
+    </div>
+    <p class="helptext">
+      Attach the payment to an invoice where you can &mdash; that is what settles a
+      balance. A payment with only a dancer sits as a credit on their record.
+    </p>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Who paid</div>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.payer_name %}
+      {% include 'includes/field.html' with field=form.payer_phone %}
+      {% include 'includes/field.html' with field=form.bank_name %}
+      {% include 'includes/field.html' with field=form.account_number %}
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Handling</div>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.received_by %}
+      {% include 'includes/field.html' with field=form.status %}
+    </div>
+    {% include 'includes/field.html' with field=form.proof %}
+    {% include 'includes/field.html' with field=form.notes %}
+  </fieldset>
+
+  <div class="row">
+    <button type="submit" class="btn btn-lg"><i class="fas fa-check"></i> Record payment</button>
+    <a href="{% url 'finance:payment_list' %}" class="btn btn-lg btn-quiet">Cancel</a>
+  </div>
+</form>
+{% endblock %}

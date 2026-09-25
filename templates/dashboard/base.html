@@ -1,0 +1,115 @@
+{% load static studio %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1a0a12">
+<title>{% block title %}{{ page_title|default:"Dashboard" }} · {{ studio.short_name|default:"BDSU" }}{% endblock %}</title>
+<meta name="robots" content="noindex, nofollow">
+
+{% if studio.favicon %}<link rel="icon" href="{{ studio.favicon.url }}">{% else %}<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩰</text></svg>">{% endif %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900&family=Montserrat:wght@300;400;500;600;700;800&family=Italianno&family=Michroma&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<link rel="stylesheet" href="{% static_v 'css/brand.css' %}">
+<link rel="stylesheet" href="{% static_v 'css/dashboard.css' %}">
+{% block extra_css %}{% endblock %}
+</head>
+
+<body class="dash">
+<a href="#dash-main" class="skip-link">Skip to content</a>
+
+<div class="dash-shell">
+  {% include 'dashboard/includes/sidebar.html' %}
+  <div class="dash-scrim" aria-hidden="true"></div>
+
+  <div class="dash-main">
+    <header class="dash-topbar">
+      <button class="icon-btn sidebar-toggle" aria-label="Open menu" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <span class="dash-title hide-mobile">{{ page_title|default:"Dashboard" }}</span>
+
+      {% if user.is_studio_staff %}
+        <form class="dash-search" method="get" action="{% url 'academics:student_list' %}">
+          <i class="fas fa-magnifying-glass"></i>
+          <label for="dash-q" class="sr-only">Search dancers</label>
+          <input type="search" name="q" id="dash-q" class="form-input" placeholder="Search dancers…">
+        </form>
+      {% else %}
+        <span class="push"></span>
+      {% endif %}
+
+      <div class="relative">
+        <button class="icon-btn" data-dropdown="notif-panel" aria-label="Notifications" aria-expanded="false">
+          <i class="fas fa-bell"></i>
+          {% if unread_notifications %}<span class="dot">{{ unread_notifications }}</span>{% endif %}
+        </button>
+        <div class="dropdown-panel" id="notif-panel"
+             hx-get="{% url 'accounts:notification_dropdown' %}"
+             hx-trigger="intersect once"
+             hx-swap="innerHTML">
+          <div class="head"><h4>Notifications</h4></div>
+          <div class="empty" style="padding:2rem 1rem"><i class="fas fa-spinner fa-spin"></i></div>
+        </div>
+      </div>
+
+      <a href="{% url 'website:home' %}" class="icon-btn" title="View the public site" target="_blank" rel="noopener">
+        <i class="fas fa-arrow-up-right-from-square"></i>
+      </a>
+
+      <div class="relative">
+        <button class="icon-btn" data-dropdown="user-panel" aria-label="Account menu" aria-expanded="false" style="width:auto;padding-inline:.5rem;gap:.5rem;display:flex">
+          <span class="avatar avatar-sm">
+            {% if user.photo %}<img src="{{ user.photo.url }}" alt="">{% else %}{{ user.initials }}{% endif %}
+          </span>
+          <i class="fas fa-chevron-down" style="font-size:.7rem"></i>
+        </button>
+        <div class="dropdown-panel" id="user-panel">
+          <div class="head">
+            <div>
+              <strong style="display:block">{{ user.display_name }}</strong>
+              <span class="text-faint" style="font-size:.78rem">{{ user.get_role_display }}</span>
+            </div>
+          </div>
+          <a class="note-item" href="{% url 'accounts:profile' %}"><span class="ico"><i class="fas fa-user"></i></span><strong>My profile</strong></a>
+          <a class="note-item" href="{% url 'accounts:password_change' %}"><span class="ico"><i class="fas fa-key"></i></span><strong>Change password</strong></a>
+          {% if user.is_superuser %}
+            <a class="note-item" href="/django-admin/"><span class="ico"><i class="fas fa-screwdriver-wrench"></i></span><strong>Django admin</strong></a>
+          {% endif %}
+          <form method="post" action="{% url 'accounts:logout' %}" style="border-top:1px solid var(--line)">
+            {% csrf_token %}
+            <button type="submit" class="note-item" style="width:100%;background:none;border:none;cursor:pointer;text-align:left">
+              <span class="ico" style="background:var(--danger-wash);color:var(--danger)"><i class="fas fa-right-from-bracket"></i></span>
+              <strong>Sign out</strong>
+            </button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <main class="dash-body" id="dash-main">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}">
+            <i class="fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+            <div>{{ message }}</div>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.12/htmx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{% static_v 'js/dashboard.js' %}" defer></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

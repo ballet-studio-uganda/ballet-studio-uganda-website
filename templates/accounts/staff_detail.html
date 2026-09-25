@@ -1,0 +1,132 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'dashboard:staff_list' %}">Staff</a><i class="fas fa-chevron-right"></i>
+      <span>{{ member.user.display_name }}</span>
+    </nav>
+    <div class="row gap-sm">
+      <span class="avatar avatar-lg">
+        {% if member.user.photo %}<img src="{{ member.user.photo.url }}" alt="">{% else %}{{ member.user.initials }}{% endif %}
+      </span>
+      <div>
+        <h1>{{ member.user.display_name }}</h1>
+        <p>{{ member.job_title|default:member.user.get_role_display }} &middot;
+           <span class="mono">{{ member.staff_id }}</span></p>
+      </div>
+    </div>
+  </div>
+  {% if can_see_pay %}
+    <a href="{% url 'dashboard:user_detail' member.user.pk %}" class="btn btn-sm btn-outline">
+      <i class="fas fa-user-gear"></i> Account
+    </a>
+  {% endif %}
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Details</h3></div>
+    <div class="panel-body">
+      <dl class="doc-meta">
+        <div><dt>Email</dt><dd>{{ member.user.email }}</dd></div>
+        <div><dt>Phone</dt><dd>{{ member.user.phone|default:"—" }}</dd></div>
+        <div><dt>Employment</dt><dd>{{ member.get_employment_type_display }}</dd></div>
+        <div><dt>Joined</dt><dd>{{ member.date_joined_studio|date:"F Y"|default:"—" }}</dd></div>
+        <div><dt>Experience</dt><dd>{% if member.years_of_experience %}{{ member.years_of_experience }} years{% else %}—{% endif %}</dd></div>
+        <div><dt>Active</dt><dd>{{ member.is_active_staff|yesno:"Yes,No" }}</dd></div>
+      </dl>
+
+      {% if member.bio %}<p class="mt-3">{{ member.bio }}</p>{% endif %}
+
+      {% if member.qualification_list %}
+        <h4 class="mt-3 mb-2">Qualifications</h4>
+        <ul class="outcome-list">
+          {% for qualification in member.qualification_list %}
+            <li><i class="fas fa-certificate"></i> {{ qualification }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if member.emergency_contact_name %}
+        <div class="alert alert-warning mt-3">
+          <i class="fas fa-phone"></i>
+          <div><strong>Emergency contact:</strong> {{ member.emergency_contact_name }}
+            {% if member.emergency_contact_relationship %} ({{ member.emergency_contact_relationship }}){% endif %}
+            {% if member.emergency_contact_phone %}<br>{{ member.emergency_contact_phone }}{% endif %}</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Classes taught</h3><span class="pill">{{ classes|length }}</span></div>
+    <div class="panel-body flush">
+      {% for dance_class in classes %}
+        <a href="{% url 'academics:class_detail' dance_class.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ dance_class.program.accent_colour }}">
+              <i class="fas fa-shoe-prints" style="font-size:.7rem"></i>
+            </span>
+            <div><strong>{{ dance_class.name }}</strong><span>{{ dance_class.term }}</span></div>
+          </div>
+          <span class="pill">{{ dance_class.enrolled_count }}</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-shoe-prints"></i>
+          <p>No classes assigned.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if can_see_pay %}
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Pay &amp; banking</h3>
+        <span class="pill pill-danger"><i class="fas fa-lock"></i> Management only</span>
+      </div>
+      <div class="panel-body">
+        <dl class="doc-meta">
+          <div><dt>Monthly salary</dt><dd>
+            {% if member.monthly_salary %}{{ CURRENCY }} {{ member.monthly_salary|floatformat:0|intcomma }}{% else %}—{% endif %}</dd></div>
+          <div><dt>Hourly rate</dt><dd>
+            {% if member.hourly_rate %}{{ CURRENCY }} {{ member.hourly_rate|floatformat:0|intcomma }}{% else %}—{% endif %}</dd></div>
+          <div><dt>Bank</dt><dd>{{ member.bank_name|default:"—" }}</dd></div>
+          <div><dt>Account</dt><dd class="mono">{{ member.bank_account_number|default:"—" }}</dd></div>
+          <div><dt>Mobile money</dt><dd>{{ member.mobile_money_number|default:"—" }}</dd></div>
+          <div><dt>NIN</dt><dd class="mono">{{ member.national_id|default:"—" }}</dd></div>
+        </dl>
+        <a href="{% url 'finance:payroll_create' %}" class="btn btn-sm btn-outline mt-3">
+          <i class="fas fa-sack-dollar"></i> New payroll entry
+        </a>
+      </div>
+    </div>
+
+    {% if member.payroll_entries.exists %}
+      <div class="panel">
+        <div class="panel-head"><h3>Payroll history</h3></div>
+        <div class="panel-body flush">
+          <div class="table-wrap" style="border:none">
+            <table class="table">
+              <thead><tr><th>Period</th><th>Paid</th><th>Status</th><th class="money">Net</th></tr></thead>
+              <tbody>
+                {% for entry in member.payroll_entries.all|slice:":12" %}
+                  <tr>
+                    <td>{{ entry.period_start|date:"M Y" }}</td>
+                    <td>{{ entry.paid_date|date:"j M"|default:"—" }}</td>
+                    <td><span class="pill {% if entry.status == 'paid' %}pill-success{% else %}pill-warning{% endif %}">
+                      {{ entry.get_status_display }}</span></td>
+                    <td class="money">{{ CURRENCY }} {{ entry.net_amount|floatformat:0|intcomma }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

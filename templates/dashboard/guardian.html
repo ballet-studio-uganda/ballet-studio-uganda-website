@@ -1,0 +1,169 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Hello{% if user.first_name %}, {{ user.first_name }}{% endif %}</h1>
+    <p>{{ children|length }} dancer{{ children|length|pluralize }} at {{ studio.studio_name }}</p>
+  </div>
+  <a href="{% url 'finance:my_statement' %}" class="btn btn-sm btn-outline"><i class="fas fa-file-invoice-dollar"></i> Fee statement</a>
+</div>
+
+{% if not guardian %}
+  <div class="alert alert-warning">
+    <i class="fas fa-triangle-exclamation"></i>
+    <div>Your parent profile has not been set up yet. Please contact the studio office
+      so we can link you to your dancer&rsquo;s records.</div>
+  </div>
+{% elif not children %}
+  <div class="alert">
+    <i class="fas fa-circle-info"></i>
+    <div>No dancers are linked to your account yet. The studio office links children to
+      parent accounts &mdash; please get in touch if this looks wrong.</div>
+  </div>
+{% endif %}
+
+{% if statement and statement.balance > 0 %}
+  <div class="alert alert-warning">
+    <i class="fas fa-file-invoice-dollar"></i>
+    <div>
+      <strong>{{ CURRENCY }} {{ statement.balance|floatformat:0|intcomma }} outstanding</strong>
+      across {{ statement.invoices|length }} invoice{{ statement.invoices|length|pluralize }}{% if statement.overdue_count %},
+      {{ statement.overdue_count }} of which {{ statement.overdue_count|pluralize:"is,are" }} overdue{% endif %}.
+      <a href="{% url 'finance:my_statement' %}" class="text-pink" style="font-weight:600">See statement &rarr;</a>
+    </div>
+  </div>
+{% endif %}
+
+{# ------------------------------------------------------------- children #}
+{% for row in children %}
+  <div class="panel mb-3">
+    <div class="panel-head">
+      <div class="row gap-sm">
+        <span class="avatar">
+          {% if row.student.photo %}<img src="{{ row.student.photo.url }}" alt="">{% else %}{{ row.student.initials }}{% endif %}
+        </span>
+        <div>
+          <h3>{{ row.student.full_name }}</h3>
+          <span class="text-faint" style="font-size:.78rem">
+            {{ row.student.student_id }} &middot; age {{ row.student.age }}
+            {% for dance_class in row.classes %}&middot; {{ dance_class.name }}{% endfor %}
+          </span>
+        </div>
+      </div>
+      <a href="{% url 'academics:student_detail' row.student.pk %}" class="link-arrow">Full record <i class="fas fa-arrow-right"></i></a>
+    </div>
+
+    <div class="panel-body">
+      <div class="kpi-grid" style="margin-bottom:0">
+        <div class="kpi {% if row.attendance.rate >= 85 %}kpi-green{% elif row.attendance.rate >= 70 %}kpi-gold{% else %}kpi-red{% endif %}">
+          <div class="kpi-label"><i class="fas fa-user-check"></i> Attendance</div>
+          <div class="kpi-value">{% if row.attendance.rate is not None %}{{ row.attendance.rate }}<small>%</small>{% else %}&mdash;{% endif %}</div>
+          <div class="kpi-note"><span>{{ row.attendance.attended }} of {{ row.attendance.total }} sessions</span></div>
+        </div>
+
+        <div class="kpi kpi-pink">
+          <div class="kpi-label"><i class="fas fa-chart-line"></i> Latest report</div>
+          {% if row.latest_report %}
+            <div class="kpi-value">{{ row.latest_report.average_percent|floatformat:0 }}<small>%</small></div>
+            <div class="kpi-note">
+              <a href="{% url 'academics:report_detail' row.latest_report.pk %}" class="text-pink">
+                {{ row.latest_report.period.name }} &rarr;
+              </a>
+            </div>
+          {% else %}
+            <div class="kpi-value" style="font-size:1.1rem">Not yet published</div>
+            <div class="kpi-note"><span>Reports appear here each term</span></div>
+          {% endif %}
+        </div>
+
+        <div class="kpi kpi-plum">
+          <div class="kpi-label"><i class="fas fa-calendar-day"></i> Next class</div>
+          {% if row.next_session %}
+            <div class="kpi-value" style="font-size:1.2rem">{{ row.next_session.date|date:"D j M" }}</div>
+            <div class="kpi-note"><span>{{ row.next_session.start_time|time:"H:i" }} &middot; {{ row.next_session.dance_class.name }}</span></div>
+          {% else %}
+            <div class="kpi-value" style="font-size:1.1rem">Nothing scheduled</div>
+          {% endif %}
+        </div>
+
+        {% if row.student.recital_roles.exists %}
+          <div class="kpi kpi-gold">
+            <div class="kpi-label"><i class="fas fa-star"></i> In the recital</div>
+            <div class="kpi-value" style="font-size:1.2rem">{{ row.student.recital_roles.count }} piece{{ row.student.recital_roles.count|pluralize }}</div>
+            <div class="kpi-note"><a href="{% url 'events:recital' %}" class="text-pink">See the programme &rarr;</a></div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+<div class="chart-grid">
+  {% if open_invoices %}
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Invoices</h3>
+      <a href="{% url 'finance:my_statement' %}" class="link-arrow">Statement <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Invoice</th><th>Dancer</th><th>Due</th><th class="money">Balance</th></tr></thead>
+          <tbody>
+            {% for invoice in open_invoices %}
+              <tr onclick="window.location='{% url 'finance:invoice_detail' invoice.pk %}'" style="cursor:pointer">
+                <td><span class="mono">{{ invoice.number }}</span></td>
+                <td>{{ invoice.student.display_name }}</td>
+                <td>{% if invoice.is_overdue %}<span class="pill pill-danger">{{ invoice.days_overdue }}d late</span>{% else %}{{ invoice.due_date|date:"j M" }}{% endif %}</td>
+                <td class="money">{{ CURRENCY }} {{ invoice.balance|floatformat:0|intcomma }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Coming up</h3>
+      <a href="{% url 'events:calendar' %}" class="link-arrow">Calendar <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      {% for event in upcoming_events %}
+        <a href="{{ event.get_absolute_url }}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ event.category.colour|default:'#EE2A7B' }}">
+              <i class="fas {{ event.category.icon|default:'fa-calendar-day' }}" style="font-size:.7rem"></i>
+            </span>
+            <div><strong>{{ event.title }}</strong><span>{{ event.start_at|date:"l j F" }}</span></div>
+          </div>
+          <span class="pill">{{ event.days_until }}d</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-calendar"></i><p>Nothing scheduled yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>From the studio</h3></div>
+    <div class="panel-body">
+      {% for announcement in announcements %}
+        <div class="alert alert-{% if announcement.level == 'urgent' %}error{% elif announcement.level == 'important' %}warning{% else %}info{% endif %}">
+          <i class="fas {{ announcement.icon|default:'fa-bullhorn' }}"></i>
+          <div>
+            <strong>{{ announcement.title }}</strong><br>{{ announcement.message }}
+            {% if announcement.link_url %}<br><a href="{{ announcement.link_url }}" class="text-pink" style="font-weight:600">{{ announcement.link_text|default:"Read more" }} &rarr;</a>{% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:2rem"><i class="fas fa-bullhorn"></i><p>No announcements right now.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

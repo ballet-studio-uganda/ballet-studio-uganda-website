@@ -1,0 +1,16 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>{{ page_title }}</h1><p>Link an existing parent account to this dancer.</p></div>
+  <a href="{% url 'academics:student_detail' student.pk %}" class="btn btn-sm btn-quiet">Cancel</a>
+</div>
+
+<form method="post" novalidate style="max-width:600px">
+  {% csrf_token %}
+  <fieldset class="fieldset">
+    {% include 'includes/form.html' %}
+  </fieldset>
+  <button type="submit" class="btn btn-lg">Link guardian</button>
+</form>
+{% endblock %}

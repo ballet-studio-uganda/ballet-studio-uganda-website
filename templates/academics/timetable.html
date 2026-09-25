@@ -1,0 +1,21 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Timetable</h1>
+    <p>{{ week_start|date:"j F" }} &ndash; {{ week_end|date:"j F Y" }}</p>
+  </div>
+  <div class="cal-nav">
+    <a href="?week={{ offset|add:'-1' }}" aria-label="Previous week"><i class="fas fa-chevron-left"></i></a>
+    <a href="?week=0" class="btn btn-sm btn-quiet">This week</a>
+    <a href="?week={{ offset|add:'1' }}" aria-label="Next week"><i class="fas fa-chevron-right"></i></a>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-body flush">
+    {% include 'academics/partials/week_grid.html' %}
+  </div>
+</div>
+{% endblock %}

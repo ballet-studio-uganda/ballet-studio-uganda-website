@@ -1,0 +1,79 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Classes</h1><p>{% if term %}{{ term }}{% endif %} &middot; {{ classes|length }} class{{ classes|length|pluralize:"es" }}</p></div>
+  {% if user.is_management %}
+    <a href="{% url 'academics:class_create' %}" class="btn btn-sm"><i class="fas fa-plus"></i> New class</a>
+  {% endif %}
+</div>
+
+<form method="get" class="filter-bar">
+  <div class="field">
+    <label for="term">Term</label>
+    <select name="term" id="term" class="form-input form-select" onchange="this.form.submit()">
+      {% for option in terms %}
+        <option value="{{ option.pk }}" {% if term and option.pk == term.pk %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="programme">Programme</label>
+    <select name="programme" id="programme" class="form-input form-select" onchange="this.form.submit()">
+      <option value="">All programmes</option>
+      {% for programme in programmes %}
+        <option value="{{ programme.slug }}" {% if active_programme == programme.slug %}selected{% endif %}>{{ programme.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-sm">Filter</button>
+</form>
+
+<div class="chart-grid">
+  {% for dance_class in classes %}
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>{{ dance_class.name }}</h3>
+          <span class="pill mt-1" style="background:{{ dance_class.program.accent_colour }}1a;color:{{ dance_class.program.accent_colour }}">
+            {{ dance_class.program.name }}
+          </span>
+        </div>
+        <a href="{% url 'academics:class_detail' dance_class.pk %}" class="btn btn-sm btn-quiet"><i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="panel-body">
+        <div class="meta mb-3">
+          <span><i class="fas fa-calendar"></i> {{ dance_class.schedule_display }}</span>
+        </div>
+        <div class="meta mb-3">
+          <span><i class="fas fa-chalkboard-user"></i> {{ dance_class.teacher_names }}</span>
+          {% if dance_class.studio %}<span><i class="fas fa-door-open"></i> {{ dance_class.studio.name }}</span>{% endif %}
+        </div>
+
+        <div class="row-between mb-1" style="font-size:.78rem">
+          <span class="text-soft">Enrolled</span>
+          <strong>{{ dance_class.n_enrolled }} / {{ dance_class.capacity }}</strong>
+        </div>
+        <div class="bar {% if dance_class.fill_percent >= 100 %}bar-danger{% elif dance_class.fill_percent >= 80 %}bar-warning{% endif %}">
+          <span style="width:{{ dance_class.fill_percent }}%"></span>
+        </div>
+
+        <div class="row gap-sm mt-3">
+          <a href="{% url 'academics:class_detail' dance_class.pk %}" class="btn btn-sm btn-outline">Open</a>
+          {% if user.is_management %}
+            <a href="{% url 'academics:generate_sessions' dance_class.pk %}" class="btn btn-sm btn-quiet">
+              <i class="fas fa-calendar-plus"></i> Sessions
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="empty" style="grid-column:1/-1">
+      <i class="fas fa-shoe-prints"></i>
+      <h3>No classes for this term yet</h3>
+      {% if user.is_management %}<p><a href="{% url 'academics:class_create' %}" class="text-pink">Create the first one</a>.</p>{% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

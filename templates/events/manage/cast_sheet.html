@@ -1,0 +1,51 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head no-print">
+  <div><h1>{{ recital.title }} &mdash; cast</h1><p>{{ recital.year }} &middot; {{ recital.cast_size }} dancers</p></div>
+  <button onclick="window.print()" class="btn btn-sm btn-outline"><i class="fas fa-print"></i> Print</button>
+</div>
+
+<div class="doc">
+  <div class="doc-head">
+    <div>
+      <span class="brand-name">Ballet</span>
+      <div class="brand-sub" style="color:var(--text-faint)">Dance Studio UG</div>
+    </div>
+    <div class="doc-ref">
+      <h2>Cast list</h2>
+      <div class="number">{{ recital.year }}</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>Piece</th><th>Dancer</th><th>Role</th><th>Costume</th></tr></thead>
+      <tbody>
+        {% for member in cast %}
+          <tr>
+            <td class="num">{{ member.performance.order }}</td>
+            <td>{{ member.performance.title }}</td>
+            <td><strong>{{ member.student.full_name }}</strong><br>
+              <span class="text-faint mono" style="font-size:.74rem">{{ member.student.student_id }}</span></td>
+            <td>{{ member.role_name|default:member.get_role_type_display }}</td>
+            <td>
+              {% if member.costume_ready %}<span class="pill pill-success">Ready</span>
+              {% else %}<span class="pill pill-warning">Pending</span>{% endif %}
+              {% if member.student.leotard_size %}
+                <br><span class="text-faint" style="font-size:.72rem">
+                  Leotard {{ member.student.leotard_size }}{% if member.student.shoe_size %}, shoe {{ member.student.shoe_size }}{% endif %}
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5"><div class="empty" style="padding:3rem">
+            <i class="fas fa-users"></i><h3>No cast assigned yet</h3>
+            <p>Add cast members in the admin under Events &rarr; Programme items.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

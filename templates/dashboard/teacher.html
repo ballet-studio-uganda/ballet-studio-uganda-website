@@ -1,0 +1,143 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>My teaching</h1>
+    <p>{{ my_classes|length }} class{{ my_classes|length|pluralize:"es" }} &middot; {{ student_count }} dancer{{ student_count|pluralize }}</p>
+  </div>
+  <a href="{% url 'academics:register_list' %}" class="btn btn-sm"><i class="fas fa-clipboard-check"></i> Take a register</a>
+</div>
+
+{% if registers_due_count %}
+  <div class="alert alert-warning">
+    <i class="fas fa-clipboard-list"></i>
+    <div><strong>{{ registers_due_count }} register{{ registers_due_count|pluralize }} outstanding.</strong>
+      Mark them while the class is still fresh.</div>
+  </div>
+{% endif %}
+
+{% if assessment_period and reports_due %}
+  <div class="alert">
+    <i class="fas fa-pen-to-square"></i>
+    <div><strong>{{ reports_due }} progress report{{ reports_due|pluralize }} still to write</strong> for
+      {{ assessment_period.name }} &mdash; closes {{ assessment_period.closes_on|date:"j F" }}.
+      <a href="{% url 'academics:report_list' %}" class="text-pink" style="font-weight:600">Write them &rarr;</a></div>
+  </div>
+{% endif %}
+
+<div class="kpi-grid">
+  <div class="kpi kpi-pink">
+    <div class="kpi-label"><i class="fas fa-shoe-prints"></i> My classes</div>
+    <div class="kpi-value">{{ my_classes|length }}</div>
+    <div class="kpi-note"><span>this term</span></div>
+  </div>
+  <div class="kpi kpi-gold">
+    <div class="kpi-label"><i class="fas fa-child-reaching"></i> My dancers</div>
+    <div class="kpi-value">{{ student_count }}</div>
+  </div>
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-clipboard-check"></i> Registers due</div>
+    <div class="kpi-value">{{ registers_due_count }}</div>
+  </div>
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-chart-line"></i> Reports to write</div>
+    <div class="kpi-value">{{ reports_due }}</div>
+    {% if assessment_period %}<div class="kpi-note"><span>{{ assessment_period.name }}</span></div>{% endif %}
+  </div>
+</div>
+
+<div class="panel mb-3">
+  <div class="panel-head">
+    <h3>This week</h3>
+    <a href="{% url 'academics:timetable' %}" class="link-arrow">Full timetable <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="panel-body flush">
+    {% include 'academics/partials/week_grid.html' %}
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Registers to take</h3></div>
+    <div class="panel-body flush">
+      {% for session in registers_due %}
+        <a href="{% url 'academics:register' session.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ session.dance_class.program.accent_colour }}">
+              <i class="fas fa-clipboard" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ session.dance_class.name }}</strong>
+              <span>{{ session.date|date:"l j M" }} &middot; {{ session.start_time|time:"H:i" }}</span>
+            </div>
+          </div>
+          <span class="btn btn-sm">Mark</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-circle-check"></i><p>Every register is up to date.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>My classes</h3>
+      <a href="{% url 'academics:class_list' %}" class="link-arrow">All classes <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      {% for dance_class in my_classes %}
+        <a href="{% url 'academics:class_detail' dance_class.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ dance_class.program.accent_colour }}">
+              <i class="fas fa-shoe-prints" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ dance_class.name }}</strong>
+              <span>{{ dance_class.schedule_display }}</span>
+            </div>
+          </div>
+          <span class="pill">{{ dance_class.enrolled_count }}/{{ dance_class.capacity }}</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem">
+          <i class="fas fa-shoe-prints"></i>
+          <p>No classes assigned to you yet. An administrator can add you to a class.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if attendance_concerns %}
+  <div class="panel">
+    <div class="panel-head"><h3>Dancers to check on</h3></div>
+    <div class="panel-body flush">
+      {% for row in attendance_concerns %}
+        <a href="{% url 'academics:student_detail' row.student.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm">{{ row.student.initials }}</span>
+            <div><strong>{{ row.student.full_name }}</strong>
+              <span>{{ row.attended }} of {{ row.total }} sessions</span></div>
+          </div>
+          <span class="pill {% if row.rate < 50 %}pill-danger{% else %}pill-warning{% endif %}">{{ row.rate }}%</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <div class="panel-head"><h3>Studio noticeboard</h3></div>
+    <div class="panel-body">
+      {% for announcement in announcements %}
+        <div class="alert alert-{% if announcement.level == 'urgent' %}error{% elif announcement.level == 'important' %}warning{% else %}info{% endif %}">
+          <i class="fas {{ announcement.icon|default:'fa-bullhorn' }}"></i>
+          <div><strong>{{ announcement.title }}</strong><br>{{ announcement.message|truncatewords:28 }}</div>
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:2rem"><i class="fas fa-bullhorn"></i><p>No announcements right now.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

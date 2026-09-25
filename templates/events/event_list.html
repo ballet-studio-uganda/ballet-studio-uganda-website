@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>What&rsquo;s on</span></nav>
+    <span class="kicker">The studio year</span>
+    <h1>What&rsquo;s on</h1>
+    <p class="lede">Recitals, workshops, masterclasses and open days.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="row-between mb-4">
+      <div class="row gap-sm">
+        <a href="?when=upcoming{% if active_category %}&amp;category={{ active_category }}{% endif %}" class="pill {% if when != 'past' %}pill-pink{% endif %}">Upcoming</a>
+        <a href="?when=past{% if active_category %}&amp;category={{ active_category }}{% endif %}" class="pill {% if when == 'past' %}pill-pink{% endif %}">Past</a>
+      </div>
+      <div class="row gap-sm">
+        <a href="?when={{ when }}" class="pill {% if not active_category %}pill-plum{% endif %}">All types</a>
+        {% for category in categories %}
+          <a href="?when={{ when }}&amp;category={{ category.slug }}" class="pill"
+             style="{% if active_category == category.slug %}background:{{ category.colour }};color:#fff{% endif %}">{{ category.name }}</a>
+        {% endfor %}
+      </div>
+      <a href="{% url 'events:calendar' %}" class="btn btn-sm btn-outline"><i class="fas fa-calendar"></i> Calendar view</a>
+    </div>
+
+    <div class="grid grid-3">
+      {% for event in page_obj %}
+        <a href="{{ event.get_absolute_url }}" class="card" data-reveal>
+          <div class="card-media" style="aspect-ratio:16/10">
+            {% if event.poster %}<img src="{{ event.poster.url }}" alt="{{ event.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder" style="background:linear-gradient(160deg,#1a0a12,{{ event.category.colour|default:'#701344' }})"><i class="fas {{ event.category.icon|default:'fa-calendar-day' }}"></i></div>{% endif %}
+            {% if event.category %}<span class="card-tag" style="background:{{ event.category.colour }}">{{ event.category.name }}</span>{% endif %}
+          </div>
+          <div class="card-body">
+            <div class="meta">
+              <span><i class="fas fa-calendar"></i> {{ event.start_at|date:"l j F Y" }}</span>
+            </div>
+            <h3 style="font-size:1.2rem" class="mt-2">{{ event.title }}</h3>
+            {% if event.summary %}<p class="mt-1">{{ event.summary|truncatewords:20 }}</p>{% endif %}
+            <div class="meta mt-3">
+              <span><i class="fas fa-clock"></i> {{ event.duration_display }}</span>
+              {% if event.venue_name %}<span><i class="fas fa-location-dot"></i> {{ event.venue_name }}</span>{% endif %}
+            </div>
+            <div class="row gap-sm mt-3">
+              {% if event.is_free %}<span class="pill pill-success">Free</span>
+              {% else %}<span class="pill pill-gold">{{ CURRENCY }} {{ event.ticket_price|floatformat:0 }}</span>{% endif %}
+              {% if event.registration_open %}<span class="pill pill-pink">Booking open</span>{% endif %}
+            </div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-calendar-xmark"></i>
+          <h3>Nothing {% if when == 'past' %}in the archive{% else %}coming up{% endif %} yet</h3>
+          <p>Check back soon, or look at the <a href="{% url 'events:calendar' %}" class="text-pink">full calendar</a>.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% include 'includes/pagination.html' %}
+  </div>
+</section>
+{% endblock %}

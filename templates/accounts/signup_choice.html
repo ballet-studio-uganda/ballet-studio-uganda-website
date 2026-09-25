@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap wrap-tight center">
+    <span class="kicker">Create an account</span>
+    <h1>Who are you?</h1>
+    <p class="lede" style="margin-inline:auto">
+      Every account is checked by the studio office before it is activated &mdash;
+      it keeps children&rsquo;s records safe.
+    </p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap wrap-tight">
+    <div class="role-grid">
+      <a href="{% url 'accounts:signup_guardian' %}" class="role-card" data-reveal>
+        <i class="fas fa-user-group"></i>
+        <h3>Parent or guardian</h3>
+        <p>Follow your dancer&rsquo;s attendance and progress reports, and see your fee statement.</p>
+      </a>
+      <a href="{% url 'accounts:signup_student' %}" class="role-card" data-reveal>
+        <i class="fas fa-child-reaching"></i>
+        <h3>Student</h3>
+        <p>See your own timetable, attendance and progress &mdash; for dancers old enough to have a login.</p>
+      </a>
+      <a href="{% url 'accounts:signup_staff' %}" class="role-card" data-reveal>
+        <i class="fas fa-chalkboard-user"></i>
+        <h3>Studio staff</h3>
+        <p>Teachers, administrators and creative directors. Your role is confirmed by the office.</p>
+      </a>
+    </div>
+
+    <p class="center mt-4 text-soft">
+      Already have an account? <a href="{% url 'accounts:login' %}" class="text-pink" style="font-weight:600">Sign in</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

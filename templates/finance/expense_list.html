@@ -1,0 +1,89 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Expenses</h1><p>{{ CURRENCY }} {{ total|floatformat:0|intcomma }} in this period</p></div>
+  <div class="row gap-sm">
+    <a href="{% url 'finance:export_csv' %}?kind=expenses&amp;period={{ period }}" class="btn btn-sm btn-outline">
+      <i class="fas fa-file-csv"></i> Export
+    </a>
+    <a href="{% url 'finance:expense_create' %}" class="btn btn-sm"><i class="fas fa-plus"></i> Record an expense</a>
+  </div>
+</div>
+
+<div class="period-bar">
+  {% for value, label in period_choices %}
+    {% if value != 'custom' %}
+      <a href="?period={{ value }}" class="{% if period == value %}active{% endif %}">{{ label }}</a>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<form method="get" class="filter-bar">
+  <input type="hidden" name="period" value="{{ period }}">
+  <div class="field">
+    <label for="q">Search</label>
+    <input type="search" name="q" id="q" class="form-input" value="{{ q }}" placeholder="Description, payee or reference…">
+  </div>
+  <div class="field">
+    <label for="category">Category</label>
+    <select name="category" id="category" class="form-input form-select">
+      <option value="">All categories</option>
+      {% for category in categories %}
+        <option value="{{ category.pk }}" {% if active_category == category.pk|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-sm">Filter</button>
+  <a href="{% url 'finance:expense_list' %}" class="btn btn-sm btn-quiet">Clear</a>
+</form>
+
+{% if breakdown %}
+  <div class="panel mb-3">
+    <div class="panel-head"><h3>By category, this period</h3></div>
+    <div class="panel-body">
+      <ul class="breakdown">
+        {% for row in breakdown %}
+          <li>
+            <span class="swatch" style="background:{{ row.colour }}"></span>
+            <span class="truncate">{{ row.label }} <span class="text-faint">({{ row.count }})</span></span>
+            <span class="amount">{{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}<span class="pct">{{ row.percent }}%</span></span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endif %}
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th>Reference</th><th>Date</th><th>Category</th><th>Description</th>
+        <th>Payee</th><th>Method</th><th>Transaction ID</th><th>Status</th><th class="money">Amount</th></tr>
+    </thead>
+    <tbody>
+      {% for expense in page_obj %}
+        <tr onclick="window.location='{% url 'finance:expense_detail' expense.pk %}'" style="cursor:pointer">
+          <td class="mono">{{ expense.reference }}</td>
+          <td>{{ expense.expense_date|date:"j M Y" }}
+            {% if expense.expense_time %}<br><span class="text-faint" style="font-size:.74rem">{{ expense.expense_time|time:"H:i" }}</span>{% endif %}</td>
+          <td><span class="pill" style="background:{{ expense.category.colour }}1a;color:{{ expense.category.colour }}">{{ expense.category.name }}</span></td>
+          <td>{{ expense.description|truncatechars:34 }}</td>
+          <td>{{ expense.payee_name|default:"—"|truncatechars:20 }}</td>
+          <td><span class="pill">{{ expense.get_method_display }}</span></td>
+          <td class="mono" style="font-size:.76rem">{{ expense.transaction_id|default:"—" }}</td>
+          <td><span class="pill {% if expense.status == 'paid' %}pill-success{% elif expense.status == 'rejected' %}pill-danger{% else %}pill-warning{% endif %}">
+            {{ expense.get_status_display }}</span></td>
+          <td class="money">{{ CURRENCY }} {{ expense.amount|floatformat:0|intcomma }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9"><div class="empty" style="padding:3rem">
+          <i class="fas fa-money-bill-wave"></i><h3>No expenses in this period</h3></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

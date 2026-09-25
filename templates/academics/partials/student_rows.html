@@ -1,0 +1,62 @@
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th>Dancer</th><th>ID</th><th class="num">Age</th><th>Classes</th><th>Guardian</th><th>Status</th><th class="shrink"></th></tr>
+    </thead>
+    <tbody>
+      {% for student in page_obj %}
+        <tr onclick="window.location='{% url 'academics:student_detail' student.pk %}'" style="cursor:pointer">
+          <td>
+            <span class="row gap-sm">
+              <span class="avatar avatar-sm">
+                {% if student.photo %}<img src="{{ student.photo.url }}" alt="">{% else %}{{ student.initials }}{% endif %}
+              </span>
+              <span>
+                <strong>{{ student.full_name }}</strong>
+                {% if student.needs_health_watch %}
+                  <i class="fas fa-ribbon text-pink" title="Health note on file"></i>
+                {% endif %}
+                {% if student.preferred_name %}<br><span class="text-faint" style="font-size:.74rem">&ldquo;{{ student.preferred_name }}&rdquo;</span>{% endif %}
+              </span>
+            </span>
+          </td>
+          <td class="mono">{{ student.student_id }}</td>
+          <td class="num">{{ student.age }}</td>
+          <td>
+            {% for enrolment in student.enrolments.all %}
+              <span class="pill" style="background:{{ enrolment.dance_class.program.accent_colour }}1a;color:{{ enrolment.dance_class.program.accent_colour }}">
+                {{ enrolment.dance_class.name|truncatechars:18 }}
+              </span>
+            {% empty %}
+              <span class="text-faint">&mdash;</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% with guardian=student.primary_guardian %}
+              {% if guardian %}
+                {{ guardian.user.display_name }}<br>
+                <span class="text-faint" style="font-size:.74rem">{{ guardian.user.phone|default:guardian.user.email }}</span>
+              {% else %}<span class="text-faint">Not linked</span>{% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            <span class="pill {% if student.status == 'active' %}pill-success{% elif student.status == 'withdrawn' %}pill-danger{% else %}pill-warning{% endif %}">
+              {{ student.get_status_display }}
+            </span>
+          </td>
+          <td class="shrink"><i class="fas fa-chevron-right text-faint"></i></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">
+          <div class="empty" style="padding:3rem">
+            <i class="fas fa-child-reaching"></i>
+            <h3>No dancers found</h3>
+            <p>{% if q %}Nothing matches &ldquo;{{ q }}&rdquo;.{% else %}Add your first dancer to get started.{% endif %}</p>
+          </div>
+        </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'includes/pagination.html' %}

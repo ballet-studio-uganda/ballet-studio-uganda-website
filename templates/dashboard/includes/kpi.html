@@ -1,0 +1,17 @@
+{% comment %}A KPI tile. Usage:
+{% include 'dashboard/includes/kpi.html' with label="Income" value="UGX 4,200,000" note="this month" tone="pink" icon="fa-arrow-trend-up" %}
+{% endcomment %}
+<div class="kpi kpi-{{ tone|default:'pink' }}">
+  <div class="kpi-label">{% if icon %}<i class="fas {{ icon }}"></i>{% endif %} {{ label }}</div>
+  <div class="kpi-value"{% if slot %} data-kpi="{{ slot }}"{% endif %}>{{ value }}{% if unit %} <small>{{ unit }}</small>{% endif %}</div>
+  {% if note or change is not None %}
+    <div class="kpi-note">
+      {% if change is not None %}
+        {% if change > 0 %}<span class="trend trend-up"><i class="fas fa-arrow-up"></i>{{ change }}%</span>
+        {% elif change < 0 %}<span class="trend trend-down"><i class="fas fa-arrow-down"></i>{{ change|floatformat:1 }}%</span>
+        {% else %}<span class="trend trend-flat">no change</span>{% endif %}
+      {% endif %}
+      {% if note %}<span>{{ note }}</span>{% endif %}
+    </div>
+  {% endif %}
+</div>

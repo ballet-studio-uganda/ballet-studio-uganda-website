@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>News</span></nav>
+    <span class="kicker">From the studio</span>
+    <h1>News &amp; announcements</h1>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+
+    <div class="row-between mb-4">
+      <div class="row gap-sm">
+        <a href="{% url 'website:news_list' %}" class="pill {% if not active_category %}pill-pink{% endif %}">All</a>
+        {% for category in categories %}
+          <a href="?category={{ category.slug }}" class="pill {% if active_category == category.slug %}pill-pink{% endif %}">
+            {{ category.name }} <span style="opacity:.6">{{ category.n }}</span>
+          </a>
+        {% endfor %}
+      </div>
+      <form method="get" class="row gap-sm">
+        <label class="sr-only" for="news-q">Search news</label>
+        <input type="search" name="q" id="news-q" class="form-input" value="{{ q }}" placeholder="Search news…" style="width:220px">
+        <button class="btn btn-sm" type="submit"><i class="fas fa-magnifying-glass"></i></button>
+      </form>
+    </div>
+
+    <div class="grid grid-3">
+      {% for post in page_obj %}
+        <a href="{{ post.get_absolute_url }}" class="card news-card" data-reveal>
+          <div class="card-media">
+            {% if post.cover_image %}<img src="{{ post.cover_image.url }}" alt="{{ post.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas fa-newspaper"></i></div>{% endif %}
+            {% if post.category %}<span class="card-tag">{{ post.category.name }}</span>{% endif %}
+          </div>
+          <div class="card-body">
+            <div class="meta">
+              <span>{{ post.published_at|date:"j F Y" }}</span>
+              <span class="dot-sep">{{ post.reading_minutes }} min read</span>
+            </div>
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.excerpt|default:post.body|striptags|truncatewords:22 }}</p>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-newspaper"></i><h3>Nothing here yet</h3>
+          <p>{% if q %}No stories match &ldquo;{{ q }}&rdquo;.{% else %}Studio news will appear here.{% endif %}</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% include 'includes/pagination.html' %}
+  </div>
+</section>
+{% endblock %}

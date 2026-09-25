@@ -1,0 +1,62 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>{{ page_title }}</h1><p>A class is a programme taught to a group in one term.</p></div>
+  <a href="{% url 'academics:class_list' %}" class="btn btn-sm btn-quiet">Cancel</a>
+</div>
+
+<form method="post" novalidate style="max-width:860px">
+  {% csrf_token %}
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">The class</div>
+    <div class="form-grid">
+      {% include 'includes/field.html' with field=form.name %}
+      {% include 'includes/field.html' with field=form.program %}
+      {% include 'includes/field.html' with field=form.term %}
+      {% include 'includes/field.html' with field=form.studio %}
+      {% include 'includes/field.html' with field=form.capacity %}
+    </div>
+    {% include 'includes/field.html' with field=form.description %}
+    {% include 'includes/field.html' with field=form.teachers %}
+    {% include 'includes/field.html' with field=form.is_active %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i>
+        <div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>
+    {% endif %}
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <div class="fieldset-title">Weekly timetable</div>
+    <p class="helptext mb-3">Add one row per weekly slot. Sessions for the whole term are
+      generated from these afterwards.</p>
+    {{ formset.management_form }}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Day</th><th>Starts</th><th>Ends</th><th>Studio</th><th class="shrink">Remove</th></tr></thead>
+        <tbody>
+          {% for subform in formset %}
+            <tr>
+              {% for hidden in subform.hidden_fields %}{{ hidden }}{% endfor %}
+              <td>{{ subform.weekday }}</td>
+              <td>{{ subform.start_time }}</td>
+              <td>{{ subform.end_time }}</td>
+              <td>{{ subform.studio }}</td>
+              <td class="shrink center">{% if subform.instance.pk %}{{ subform.DELETE }}{% endif %}</td>
+            </tr>
+            {% if subform.errors %}
+              <tr><td colspan="5">{{ subform.errors }}</td></tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </fieldset>
+
+  <div class="row">
+    <button type="submit" class="btn btn-lg">Save class</button>
+    <a href="{% url 'academics:class_list' %}" class="btn btn-lg btn-quiet">Cancel</a>
+  </div>
+</form>
+{% endblock %}

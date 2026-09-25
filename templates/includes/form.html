@@ -1,0 +1,11 @@
+{% comment %}Render every visible field of a form.{% endcomment %}
+{% if form.non_field_errors %}
+  <div class="alert alert-error">
+    <i class="fas fa-circle-exclamation"></i>
+    <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+  </div>
+{% endif %}
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+{% for field in form.visible_fields %}
+  {% include 'includes/field.html' with field=field %}
+{% endfor %}

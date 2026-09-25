@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>Gallery</span></nav>
+    <span class="kicker">In pictures</span>
+    <h1>Gallery</h1>
+    <p class="lede">Class, rehearsal and the stage &mdash; the studio year in photographs.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    {% if years %}
+      <div class="row gap-sm mb-4">
+        <a href="{% url 'website:gallery' %}" class="pill {% if not active_year %}pill-pink{% endif %}">All years</a>
+        {% for year in years %}
+          <a href="?year={{ year|date:'Y' }}" class="pill {% if active_year == year|date:'Y' %}pill-pink{% endif %}">{{ year|date:"Y" }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid grid-3">
+      {% for album in page_obj %}
+        <a href="{{ album.get_absolute_url }}" class="card" data-reveal>
+          <div class="card-media">
+            {% if album.cover %}<img src="{{ album.cover.url }}" alt="{{ album.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas fa-images"></i></div>{% endif %}
+            <span class="card-tag">{{ album.photo_count }} photo{{ album.photo_count|pluralize }}</span>
+          </div>
+          <div class="card-body">
+            <h3>{{ album.title }}</h3>
+            <div class="meta mt-2">
+              {% if album.date %}<span><i class="fas fa-calendar"></i> {{ album.date|date:"F Y" }}</span>{% endif %}
+              {% if album.photographer %}<span><i class="fas fa-camera"></i> {{ album.photographer }}</span>{% endif %}
+            </div>
+            {% if album.description %}<p class="mt-2">{{ album.description|truncatewords:16 }}</p>{% endif %}
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-images"></i><h3>No albums yet</h3>
+          <p>Photo albums appear here once an administrator uploads them.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% include 'includes/pagination.html' %}
+  </div>
+</section>
+{% endblock %}

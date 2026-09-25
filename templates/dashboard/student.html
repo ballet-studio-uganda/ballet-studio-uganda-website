@@ -1,0 +1,112 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Hello{% if user.first_name %}, {{ user.first_name }}{% endif %}</h1>
+    {% if student %}<p>{{ student.student_id }} &middot; {{ enrolments|length }} class{{ enrolments|length|pluralize:"es" }}</p>{% endif %}
+  </div>
+</div>
+
+{% if not student %}
+  <div class="alert alert-warning">
+    <i class="fas fa-triangle-exclamation"></i>
+    <div>Your account is not yet linked to a dancer record. Please contact the studio
+      office with your student ID and they will connect it.</div>
+  </div>
+{% else %}
+
+<div class="kpi-grid">
+  <div class="kpi {% if attendance.rate >= 85 %}kpi-green{% elif attendance.rate >= 70 %}kpi-gold{% else %}kpi-red{% endif %}">
+    <div class="kpi-label"><i class="fas fa-user-check"></i> My attendance</div>
+    <div class="kpi-value">{% if attendance.rate is not None %}{{ attendance.rate }}<small>%</small>{% else %}&mdash;{% endif %}</div>
+    <div class="kpi-note"><span>{{ attendance.attended }} of {{ attendance.total }} classes</span></div>
+  </div>
+
+  <div class="kpi kpi-pink">
+    <div class="kpi-label"><i class="fas fa-chart-line"></i> Latest report</div>
+    {% if latest_report %}
+      <div class="kpi-value">{{ latest_report.average_percent|floatformat:0 }}<small>%</small></div>
+      <div class="kpi-note"><a href="{% url 'academics:report_detail' latest_report.pk %}" class="text-pink">{{ latest_report.period.name }} &rarr;</a></div>
+    {% else %}
+      <div class="kpi-value" style="font-size:1.1rem">Coming soon</div>
+    {% endif %}
+  </div>
+
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-shoe-prints"></i> My classes</div>
+    <div class="kpi-value">{{ enrolments|length }}</div>
+  </div>
+
+  {% if recital_roles %}
+    <div class="kpi kpi-gold">
+      <div class="kpi-label"><i class="fas fa-star"></i> In the recital</div>
+      <div class="kpi-value">{{ recital_roles|length }} <small>piece{{ recital_roles|length|pluralize }}</small></div>
+      <div class="kpi-note"><a href="{% url 'events:recital' %}" class="text-pink">The programme &rarr;</a></div>
+    </div>
+  {% endif %}
+</div>
+
+<div class="panel mb-3">
+  <div class="panel-head"><h3>My week</h3></div>
+  <div class="panel-body flush">
+    {% include 'academics/partials/week_grid.html' %}
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>My progress</h3></div>
+    <div class="panel-body">
+      <div class="chart-box"><canvas id="chart-trend"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>My attendance over time</h3></div>
+    <div class="panel-body">
+      <div class="chart-box"><canvas id="chart-attendance"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>My classes</h3></div>
+    <div class="panel-body flush">
+      {% for enrolment in enrolments %}
+        <div class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ enrolment.dance_class.program.accent_colour }}">
+              <i class="fas fa-shoe-prints" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ enrolment.dance_class.name }}</strong>
+              <span>{{ enrolment.dance_class.schedule_display }}</span>
+            </div>
+          </div>
+          <span class="pill">{{ enrolment.dance_class.teacher_names }}</span>
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-shoe-prints"></i><p>You are not enrolled in any classes yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>From the studio</h3></div>
+    <div class="panel-body">
+      {% for announcement in announcements %}
+        <div class="alert alert-{% if announcement.level == 'urgent' %}error{% elif announcement.level == 'important' %}warning{% else %}info{% endif %}">
+          <i class="fas {{ announcement.icon|default:'fa-bullhorn' }}"></i>
+          <div><strong>{{ announcement.title }}</strong><br>{{ announcement.message }}</div>
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:2rem"><i class="fas fa-bullhorn"></i><p>Nothing new.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{{ progress|json_script:"data-trend" }}
+{{ attendance_trend|json_script:"data-attendance" }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Fee structure</h1><p>The studio price list, and every live bursary.</p></div>
+  <a href="/django-admin/finance/feestructure/add/" class="btn btn-sm"><i class="fas fa-plus"></i> Add a fee</a>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Fees</h3></div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Fee</th><th>Category</th><th>Programme</th><th>Term</th>
+            <th>Cycle</th><th class="money">Amount</th></tr></thead>
+          <tbody>
+            {% for fee in fees %}
+              <tr>
+                <td><strong>{{ fee.name }}</strong>
+                  {% if not fee.is_mandatory %}<br><span class="pill">Optional</span>{% endif %}</td>
+                <td><span class="pill" style="background:{{ fee.category.colour }}1a;color:{{ fee.category.colour }}">{{ fee.category.name }}</span></td>
+                <td>{{ fee.program.name|default:"All programmes" }}</td>
+                <td>{{ fee.term|default:"Standing" }}</td>
+                <td>{{ fee.get_billing_cycle_display }}</td>
+                <td class="money">{{ CURRENCY }} {{ fee.amount|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6"><div class="empty" style="padding:2.5rem">
+                <i class="fas fa-tags"></i><h3>No fees set up</h3>
+                <p>Run <span class="mono">python manage.py seed_studio</span> or add them in the admin.</p>
+              </div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Bursaries &amp; scholarships</h3>
+      <a href="/django-admin/finance/scholarship/add/" class="btn btn-sm btn-quiet"><i class="fas fa-plus"></i></a>
+    </div>
+    <div class="panel-body flush">
+      {% for scholarship in scholarships %}
+        <div class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:var(--gold);color:var(--ink)">
+              <i class="fas fa-award" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ scholarship.student.full_name }}</strong>
+              <span>{{ scholarship.name }}{% if scholarship.sponsor %} &middot; {{ scholarship.sponsor }}{% endif %}</span>
+            </div>
+          </div>
+          <span class="pill pill-gold">
+            {% if scholarship.discount_type == 'percent' %}{{ scholarship.value|floatformat:0 }}% off
+            {% else %}{{ CURRENCY }} {{ scholarship.value|floatformat:0|intcomma }}{% endif %}
+          </span>
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem">
+          <i class="fas fa-award"></i>
+          <p>No bursaries granted yet. They are applied automatically when invoices are raised.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

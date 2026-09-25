@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'events:recital' %}">Recital</a><i class="fas fa-chevron-right"></i><span>Archive</span>
+    </nav>
+    <span class="kicker">Every December since {{ studio.founded_year }}</span>
+    <h1>Recital archive</h1>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="grid grid-3">
+      {% for recital in recitals %}
+        <a href="{{ recital.get_absolute_url }}" class="card" data-reveal>
+          <div class="card-media" style="aspect-ratio:3/4">
+            {% if recital.poster %}<img src="{{ recital.poster.url }}" alt="{{ recital.title }}" loading="lazy">
+            {% elif recital.hero_image %}<img src="{{ recital.hero_image.url }}" alt="{{ recital.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas fa-masks-theater"></i></div>{% endif %}
+            <span class="card-tag">{{ recital.year }}</span>
+          </div>
+          <div class="card-body">
+            <h3>{{ recital.title }}</h3>
+            {% if recital.theme %}<p class="mt-1">{{ recital.theme }}</p>{% endif %}
+            <div class="meta mt-2">
+              <span><i class="fas fa-calendar"></i> {{ recital.performance_date|date:"j F Y" }}</span>
+              {% if recital.cast_size %}<span><i class="fas fa-users"></i> {{ recital.cast_size }}</span>{% endif %}
+            </div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-masks-theater"></i><h3>No recitals published yet</h3>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

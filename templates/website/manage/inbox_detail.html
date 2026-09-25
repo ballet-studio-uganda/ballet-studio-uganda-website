@@ -1,0 +1,31 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'website:inbox' %}">Inbox</a><i class="fas fa-chevron-right"></i>
+      <span>{{ message.name }}</span>
+    </nav>
+    <h1>{{ message.subject|default:message.get_topic_display }}</h1>
+    <p>{{ message.created_at|date:"l j F Y, H:i" }}</p>
+  </div>
+  <a href="mailto:{{ message.email }}?subject=Re: {{ message.subject|default:message.get_topic_display }}"
+     class="btn btn-sm"><i class="fas fa-reply"></i> Reply by email</a>
+</div>
+
+<div class="doc">
+  <dl class="doc-meta">
+    <div><dt>From</dt><dd>{{ message.name }}</dd></div>
+    <div><dt>Email</dt><dd><a href="mailto:{{ message.email }}" class="text-pink">{{ message.email }}</a></dd></div>
+    <div><dt>Phone</dt><dd>{% if message.phone %}<a href="tel:{{ message.phone }}" class="text-pink">{{ message.phone }}</a>{% else %}—{% endif %}</dd></div>
+    <div><dt>Topic</dt><dd>{{ message.get_topic_display }}</dd></div>
+    <div><dt>Received</dt><dd>{{ message.created_at|date:"j F Y, H:i" }}</dd></div>
+    <div><dt>Handled by</dt><dd>{{ message.handled_by.display_name|default:"—" }}</dd></div>
+  </dl>
+
+  <div class="article mt-4" style="max-width:none">
+    {{ message.message|linebreaks }}
+  </div>
+</div>
+{% endblock %}

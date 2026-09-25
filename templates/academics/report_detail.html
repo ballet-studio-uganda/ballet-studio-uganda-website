@@ -1,0 +1,132 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Progress report</h1>
+    <p>{{ report.student.full_name }} &middot; {{ report.period.name }} &middot; {{ report.dance_class.name }}</p>
+  </div>
+  <div class="row gap-sm no-print">
+    <button onclick="window.print()" class="btn btn-sm btn-outline"><i class="fas fa-print"></i> Print</button>
+    {% if user.is_management and not report.is_published %}
+      <form method="post" action="{% url 'academics:report_publish' report.pk %}"
+            data-confirm="Publish this report to the family?">
+        {% csrf_token %}
+        <button class="btn btn-sm"><i class="fas fa-paper-plane"></i> Publish</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="doc">
+  <div class="doc-head">
+    <div>
+      <span class="brand-name">Ballet</span>
+      <div class="brand-sub" style="color:var(--text-faint)">Dance Studio UG</div>
+      <p class="tagline mt-2">{{ studio.tagline }}</p>
+    </div>
+    <div class="doc-ref">
+      <h2>Progress report</h2>
+      <div class="number">{{ report.period.name }}</div>
+      <span class="pill {% if report.is_published %}pill-success{% else %}pill-warning{% endif %} mt-2">
+        {{ report.get_status_display }}
+      </span>
+    </div>
+  </div>
+
+  <div class="row gap-lg mb-4" style="align-items:center">
+    <span class="avatar avatar-xl">
+      {% if report.student.photo %}<img src="{{ report.student.photo.url }}" alt="">{% else %}{{ report.student.initials }}{% endif %}
+    </span>
+    <dl class="doc-meta" style="flex:1;margin:0">
+      <div><dt>Dancer</dt><dd>{{ report.student.full_name }}</dd></div>
+      <div><dt>Student ID</dt><dd class="mono">{{ report.student.student_id }}</dd></div>
+      <div><dt>Class</dt><dd>{{ report.dance_class.name }}</dd></div>
+      <div><dt>Teacher</dt><dd>{{ report.teacher.user.display_name|default:"—" }}</dd></div>
+      <div><dt>Term</dt><dd>{{ report.period.term }}</dd></div>
+      <div><dt>Attendance</dt><dd>{% if report.attendance_rate %}{{ report.attendance_rate }}%{% else %}—{% endif %}</dd></div>
+    </dl>
+  </div>
+
+  <div class="chart-grid mb-4">
+    <div>
+      <h3 class="mb-3">Overall</h3>
+      <div class="kpi kpi-pink">
+        <div class="kpi-label">Average across all skills</div>
+        <div class="kpi-value">{{ report.average_percent|floatformat:0|default:"—" }}<small>%</small></div>
+      </div>
+      {% for row in category_averages %}
+        <div class="mt-3">
+          <div class="row-between mb-1" style="font-size:.82rem">
+            <span>{{ row.category }}</span><strong>{{ row.percent|floatformat:0 }}%</strong>
+          </div>
+          <div class="bar"><span style="width:{{ row.percent }}%;background:{{ row.colour }}"></span></div>
+        </div>
+      {% endfor %}
+    </div>
+    <div>
+      <div class="chart-box"><canvas id="chart-radar"></canvas></div>
+    </div>
+  </div>
+
+  {% for category, scores in grouped_scores.items %}
+    <div class="rubric-category" style="--cat-colour:{{ category.colour }}">
+      <h4><i class="fas {{ category.icon|default:'fa-star' }}"></i> {{ category.name }}</h4>
+      {% for score in scores %}
+        <div class="rubric-row">
+          <div class="rubric-skill">
+            <strong>{{ score.skill.name }}</strong>
+            {% if score.comment %}<span>{{ score.comment }}</span>{% endif %}
+          </div>
+          <div class="score-meter">
+            <span class="score-pips">
+              {% for i in "12345"|make_list %}
+                <i class="{% if forloop.counter <= score.score %}on{% endif %}"></i>
+              {% endfor %}
+            </span>
+          </div>
+          <span class="score-word">{{ score.descriptor }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+
+  <div class="mt-4">
+    {% if report.strengths %}
+      <h3 class="mb-2">What is going well</h3>
+      <p class="mb-3">{{ report.strengths|linebreaks }}</p>
+    {% endif %}
+    {% if report.areas_to_develop %}
+      <h3 class="mb-2">What to work on next</h3>
+      <p class="mb-3">{{ report.areas_to_develop|linebreaks }}</p>
+    {% endif %}
+    {% if report.teacher_comment %}
+      <h3 class="mb-2">Teacher&rsquo;s comment</h3>
+      <blockquote style="border-left:4px solid var(--pink);padding-left:1.25rem;font-style:italic;color:var(--text-soft)">
+        {{ report.teacher_comment|linebreaks }}
+      </blockquote>
+    {% endif %}
+    {% if report.recommendation %}
+      <div class="alert alert-success mt-3">
+        <i class="fas fa-lightbulb"></i>
+        <div><strong>Recommendation:</strong> {{ report.recommendation }}</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="mt-4 center text-faint" style="font-size:.8rem;border-top:1px solid var(--line);padding-top:1.5rem">
+    {% if report.published_at %}Published {{ report.published_at|date:"j F Y" }}{% endif %}
+    &middot; {{ studio.studio_name }} &middot; {{ studio.tagline }}
+  </div>
+</div>
+
+{% if history.labels %}
+  <div class="panel mt-3 no-print">
+    <div class="panel-head"><h3>Progress across reports</h3></div>
+    <div class="panel-body"><div class="chart-box"><canvas id="chart-trend"></canvas></div></div>
+  </div>
+{% endif %}
+
+{{ category_averages|json_script:"data-radar" }}
+{{ history|json_script:"data-trend" }}
+{% endblock %}

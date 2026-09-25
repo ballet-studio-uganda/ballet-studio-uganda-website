@@ -1,0 +1,92 @@
+{% load static %}
+<nav class="navbar" aria-label="Main navigation">
+  <div class="nav-inner">
+
+    <a href="{% url 'website:home' %}" class="brand" aria-label="{{ studio.studio_name }} — home">
+      {% if studio.logo_light %}
+        <img src="{{ studio.logo_light.url }}" alt="{{ studio.studio_name }}">
+      {% elif studio.logo %}
+        <img src="{{ studio.logo.url }}" alt="{{ studio.studio_name }}">
+      {% else %}
+        <span class="brand-mark" aria-hidden="true">B</span>
+      {% endif %}
+      <span class="brand-words">
+        <span class="brand-name">Ballet</span>
+        <span class="brand-sub">Dance Studio UG</span>
+      </span>
+    </a>
+
+    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <ul class="nav-links" id="nav-links">
+      <li><a href="{% url 'website:home' %}" {% if request.resolver_match.url_name == 'home' %}class="active" aria-current="page"{% endif %}>Home</a></li>
+
+      <li class="has-drop">
+        <a href="{% url 'website:programmes' %}" {% if 'programme' in request.resolver_match.url_name %}class="active"{% endif %}>Training</a>
+        <ul class="drop">
+          {% for programme in site_programmes %}
+            <li><a href="{{ programme.get_absolute_url }}">{{ programme.name }}</a></li>
+          {% endfor %}
+          <li><a href="{% url 'website:programmes' %}">All programmes</a></li>
+          <li><a href="{% url 'website:faculty' %}">Our faculty</a></li>
+        </ul>
+      </li>
+
+      <li><a href="{% url 'events:recital' %}" {% if 'recital' in request.resolver_match.url_name %}class="active"{% endif %}>The Recital</a></li>
+
+      <li class="has-drop">
+        <a href="{% url 'events:list' %}" {% if request.resolver_match.namespace == 'events' %}class="active"{% endif %}>What's On</a>
+        <ul class="drop">
+          <li><a href="{% url 'events:list' %}">Upcoming events</a></li>
+          <li><a href="{% url 'events:calendar' %}">Month calendar</a></li>
+          <li><a href="{% url 'events:calendar_year' current_year %}">Year at a glance</a></li>
+          <li><a href="{% url 'events:recital_archive' %}">Recital archive</a></li>
+        </ul>
+      </li>
+
+      <li class="has-drop">
+        <a href="{% url 'website:gallery' %}" {% if 'gallery' in request.resolver_match.url_name or 'album' in request.resolver_match.url_name %}class="active"{% endif %}>Gallery</a>
+        <ul class="drop">
+          <li><a href="{% url 'website:gallery' %}">Photo albums</a></li>
+          <li><a href="{% url 'website:videos' %}">Watch performances</a></li>
+        </ul>
+      </li>
+
+      <li><a href="{% url 'website:news_list' %}" {% if 'news' in request.resolver_match.url_name %}class="active"{% endif %}>News</a></li>
+      <li><a href="{% url 'website:about' %}" {% if request.resolver_match.url_name == 'about' %}class="active"{% endif %}>About</a></li>
+      <li><a href="{% url 'website:contact' %}" {% if request.resolver_match.url_name == 'contact' %}class="active"{% endif %}>Contact</a></li>
+
+      {% if user.is_authenticated %}
+        <li class="has-drop">
+          <a href="{% url 'dashboard:home' %}">
+            <i class="fas fa-circle-user"></i> {{ user.first_name|default:"Account" }}
+          </a>
+          <ul class="drop">
+            <li><a href="{% url 'dashboard:home' %}"><i class="fas fa-gauge"></i> My dashboard</a></li>
+            <li><a href="{% url 'accounts:profile' %}"><i class="fas fa-user"></i> My profile</a></li>
+            <li><a href="{% url 'accounts:notification_list' %}">
+              <i class="fas fa-bell"></i> Notifications
+              {% if unread_notifications %}<span class="pill pill-pink">{{ unread_notifications }}</span>{% endif %}
+            </a></li>
+            <li>
+              <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+                <button type="submit" class="btn-quiet" style="width:100%;text-align:left;color:rgba(255,255,255,.78)">
+                  <i class="fas fa-right-from-bracket"></i> Sign out
+                </button>
+              </form>
+            </li>
+          </ul>
+        </li>
+      {% else %}
+        <li><a href="{% url 'accounts:login' %}">Sign in</a></li>
+      {% endif %}
+
+      {% if studio.enrolment_open %}
+        <li><a href="{% url 'website:enrol' %}" class="nav-cta">Enrol now</a></li>
+      {% endif %}
+    </ul>
+
+  </div>
+</nav>

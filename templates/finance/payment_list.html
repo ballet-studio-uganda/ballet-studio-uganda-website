@@ -1,0 +1,112 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Payments received</h1>
+    <p>{{ CURRENCY }} {{ total|floatformat:0|intcomma }} in this period</p>
+  </div>
+  <div class="row gap-sm">
+    <a href="{% url 'finance:export_csv' %}?kind=payments&amp;period={{ period }}" class="btn btn-sm btn-outline">
+      <i class="fas fa-file-csv"></i> Export
+    </a>
+    <a href="{% url 'finance:payment_create' %}" class="btn btn-sm"><i class="fas fa-plus"></i> Record a payment</a>
+  </div>
+</div>
+
+<div class="period-bar">
+  {% for value, label in period_choices %}
+    {% if value != 'custom' %}
+      <a href="?period={{ value }}" class="{% if period == value %}active{% endif %}">{{ label }}</a>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<form method="get" class="filter-bar">
+  <input type="hidden" name="period" value="{{ period }}">
+  <div class="field">
+    <label for="q">Search</label>
+    <input type="search" name="q" id="q" class="form-input" value="{{ q }}"
+           placeholder="Receipt, transaction ID, payer or dancer…">
+  </div>
+  <div class="field">
+    <label for="method">Method</label>
+    <select name="method" id="method" class="form-input form-select">
+      <option value="">All methods</option>
+      {% for value, label in methods %}
+        <option value="{{ value }}" {% if active_method == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="status">Status</label>
+    <select name="status" id="status" class="form-input form-select">
+      <option value="">All</option>
+      {% for value, label in statuses %}
+        <option value="{{ value }}" {% if active_status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-sm">Filter</button>
+  <a href="{% url 'finance:payment_list' %}" class="btn btn-sm btn-quiet">Clear</a>
+</form>
+
+{% if method_breakdown %}
+  <div class="panel mb-3">
+    <div class="panel-head"><h3>By method, this period</h3></div>
+    <div class="panel-body">
+      <div class="row gap-lg">
+        {% for row in method_breakdown %}
+          <div>
+            <span class="legend-item">
+              <span class="legend-swatch" style="background:{{ row.colour }}"></span>
+              {{ row.label }}
+            </span>
+            <div style="font-weight:700;font-variant-numeric:tabular-nums">
+              {{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}
+              <span class="text-faint" style="font-size:.75rem;font-weight:400">({{ row.count }})</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th>Receipt</th><th>Date &amp; time</th><th>Dancer</th><th>Invoice</th>
+        <th>Method</th><th>Transaction ID</th><th>Received by</th><th>Status</th><th class="money">Amount</th></tr>
+    </thead>
+    <tbody>
+      {% for payment in page_obj %}
+        <tr onclick="window.location='{% url 'finance:payment_detail' payment.pk %}'" style="cursor:pointer">
+          <td class="mono">{{ payment.receipt_number }}</td>
+          <td>{{ payment.payment_date|date:"j M Y" }}
+            {% if payment.payment_time %}<br><span class="text-faint" style="font-size:.74rem">{{ payment.payment_time|time:"H:i" }}</span>{% endif %}</td>
+          <td>{{ payment.student.full_name|default:"—" }}</td>
+          <td class="mono" style="font-size:.78rem">{{ payment.invoice.number|default:"—" }}</td>
+          <td><span class="pill">{{ payment.get_method_display }}</span></td>
+          <td class="mono" style="font-size:.76rem">{{ payment.transaction_id|default:"—" }}</td>
+          <td>{{ payment.received_by.first_name|default:"—" }}</td>
+          <td>
+            <span class="pill {% if payment.status == 'confirmed' %}pill-success{% elif payment.status == 'pending' %}pill-warning{% else %}pill-danger{% endif %}">
+              {{ payment.get_status_display }}
+            </span>
+          </td>
+          <td class="money">{{ CURRENCY }} {{ payment.amount|floatformat:0|intcomma }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9"><div class="empty" style="padding:3rem">
+          <i class="fas fa-receipt"></i><h3>No payments in this period</h3>
+          <p>Record one as soon as money comes in, so the ledger stays current.</p>
+        </div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

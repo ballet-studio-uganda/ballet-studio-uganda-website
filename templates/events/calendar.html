@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'events:list' %}">What&rsquo;s on</a><i class="fas fa-chevron-right"></i><span>Calendar</span>
+    </nav>
+    <span class="kicker">The studio year</span>
+    <h1>{{ month_name }} {{ year }}</h1>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+
+    <div class="cal-head">
+      <div class="cal-nav">
+        <a href="{% url 'events:calendar_month' prev.year prev.month %}" aria-label="Previous month"><i class="fas fa-chevron-left"></i></a>
+        <a href="{% url 'events:calendar' %}" class="btn btn-sm btn-quiet">Today</a>
+        <a href="{% url 'events:calendar_month' next.year next.month %}" aria-label="Next month"><i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="row gap-sm">
+        {% for category in categories %}
+          <span class="legend-item">
+            <span class="legend-swatch" style="background:{{ category.colour }}"></span>{{ category.name }}
+          </span>
+        {% endfor %}
+      </div>
+      <div class="row gap-sm">
+        <a href="{% url 'events:calendar_year' year %}" class="btn btn-sm btn-outline">Year view</a>
+        <a href="{% url 'events:list' %}" class="btn btn-sm btn-outline">List view</a>
+      </div>
+    </div>
+
+    {% include 'events/partials/calendar_grid.html' %}
+
+    {% if events %}
+      <h2 class="mt-4 mb-3">{{ month_name }} at a glance</h2>
+      <div class="grid grid-3">
+        {% for event in events %}
+          <a href="{{ event.get_absolute_url }}" class="card" data-reveal>
+            <div class="card-body">
+              <div class="row gap-sm mb-2">
+                <span class="pill" style="background:{{ event.category.colour|default:'#EE2A7B' }}1a;color:{{ event.category.colour|default:'#EE2A7B' }}">
+                  {{ event.category.name|default:"Event" }}
+                </span>
+              </div>
+              <h3 style="font-size:1.05rem">{{ event.title }}</h3>
+              <div class="meta mt-2">
+                <span><i class="fas fa-calendar"></i> {{ event.start_at|date:"j M" }}</span>
+                <span><i class="fas fa-clock"></i> {{ event.duration_display }}</span>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty mt-4">
+        <i class="fas fa-calendar-xmark"></i>
+        <h3>Nothing scheduled in {{ month_name }}</h3>
+        <p>Try another month, or see the <a href="{% url 'events:calendar_year' year %}" class="text-pink">whole year</a>.</p>
+      </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

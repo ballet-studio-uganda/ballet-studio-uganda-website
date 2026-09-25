@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>Training</span></nav>
+    <span class="kicker">Training</span>
+    <h1>Programmes</h1>
+    <p class="lede">From a three-year-old&rsquo;s first pli&eacute; to pointe work and repertoire &mdash; there is a place here for every dancer.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="grid grid-3">
+      {% for programme in programmes %}
+        <a href="{{ programme.get_absolute_url }}" class="card programme-card" data-reveal>
+          <div class="card-media">
+            {% if programme.image %}<img src="{{ programme.image.url }}" alt="{{ programme.name }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas {{ programme.icon|default:'fa-shoe-prints' }}"></i></div>{% endif %}
+            <span class="card-tag">{{ programme.age_range_display }}</span>
+          </div>
+          <div class="card-body">
+            <div class="accent-line" style="--accent:{{ programme.accent_colour }}"></div>
+            <h3>{{ programme.name }}</h3>
+            {% if programme.level_label %}<span class="pill pill-pink mb-2">{{ programme.level_label }}</span>{% endif %}
+            <p>{{ programme.tagline|default:programme.description|truncatewords:26 }}</p>
+            <div class="meta mt-3">
+              <span><i class="fas fa-clock"></i> {{ programme.duration_minutes }} min</span>
+              <span><i class="fas fa-repeat"></i> {{ programme.sessions_per_week }}&times; a week</span>
+            </div>
+            <span class="link-arrow mt-3">Explore <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-layer-group"></i><h3>No programmes published yet</h3>
+          <p>Add them in the admin under Academics &rarr; Programmes.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-plum">
+  <div class="wrap wrap-tight center" data-reveal>
+    <h2>Not sure which class?</h2>
+    <p class="lede mt-2" style="color:rgba(255,255,255,.78);margin-inline:auto">Tell us your dancer&rsquo;s age and we will place them &mdash; the first class is always a free trial.</p>
+    <a href="{% url 'website:enrol' %}" class="btn btn-lg mt-3">Book a trial class</a>
+  </div>
+</section>
+{% endblock %}

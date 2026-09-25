@@ -1,0 +1,125 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head no-print">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      {% if can_manage %}<a href="{% url 'finance:payment_list' %}">Payments</a>
+      {% else %}<a href="{% url 'finance:my_statement' %}">My statement</a>{% endif %}
+      <i class="fas fa-chevron-right"></i><span>{{ payment.receipt_number }}</span>
+    </nav>
+    <h1>Receipt {{ payment.receipt_number }}</h1>
+  </div>
+  <div class="row gap-sm">
+    <button onclick="window.print()" class="btn btn-sm btn-outline"><i class="fas fa-print"></i> Print</button>
+    {% if can_manage and payment.status == 'pending' %}
+      <form method="post" action="{% url 'finance:payment_confirm' payment.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-success"><i class="fas fa-check"></i> Confirm</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="doc">
+  <div class="doc-head">
+    <div>
+      <span class="brand-name">Ballet</span>
+      <div class="brand-sub" style="color:var(--text-faint)">Dance Studio UG</div>
+      <p class="text-soft mt-2" style="font-size:.85rem">
+        {{ studio.address }}{% if studio.phone %}<br>{{ studio.phone }}{% endif %}
+      </p>
+    </div>
+    <div class="doc-ref">
+      <h2>Receipt</h2>
+      <div class="number">{{ payment.receipt_number }}</div>
+      {% if payment.status == 'confirmed' %}
+        <div class="mt-3"><span class="stamp stamp-paid">Received</span></div>
+      {% elif payment.status == 'reversed' %}
+        <div class="mt-3"><span class="stamp stamp-overdue">Reversed</span></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <dl class="doc-meta">
+    <div><dt>Amount</dt><dd style="font-size:1.4rem;color:var(--plum)">{{ CURRENCY }} {{ payment.amount|floatformat:0|intcomma }}</dd></div>
+    <div><dt>Date paid</dt><dd>{{ payment.payment_date|date:"j F Y" }}</dd></div>
+    <div><dt>Time</dt><dd>{% if payment.payment_time %}{{ payment.payment_time|time:"H:i" }}{% else %}—{% endif %}</dd></div>
+    <div><dt>Method</dt><dd>{{ payment.get_method_display }}</dd></div>
+    <div><dt>Transaction ID</dt><dd class="mono">{{ payment.transaction_id|default:"—" }}</dd></div>
+    <div><dt>Status</dt><dd>{{ payment.get_status_display }}</dd></div>
+    <div><dt>Dancer</dt><dd>
+      {% if payment.student %}{{ payment.student.full_name }}<br>
+        <span class="text-faint mono" style="font-weight:400;font-size:.8rem">{{ payment.student.student_id }}</span>
+      {% else %}—{% endif %}</dd></div>
+    <div><dt>Invoice</dt><dd>
+      {% if payment.invoice %}
+        <a href="{% url 'finance:invoice_detail' payment.invoice.pk %}" class="mono text-pink">{{ payment.invoice.number }}</a>
+      {% else %}Not applied to an invoice{% endif %}</dd></div>
+    <div><dt>Paid by</dt><dd>{{ payment.payer_name|default:"—" }}
+      {% if payment.payer_phone %}<br><span class="text-faint" style="font-weight:400;font-size:.8rem">{{ payment.payer_phone }}</span>{% endif %}</dd></div>
+    {% if payment.bank_name %}<div><dt>Bank</dt><dd>{{ payment.bank_name }}</dd></div>{% endif %}
+    <div><dt>Received by</dt><dd>{{ payment.received_by.display_name|default:"—" }}</dd></div>
+    <div><dt>Recorded by</dt><dd>{{ payment.recorded_by.display_name|default:"—" }}<br>
+      <span class="text-faint" style="font-weight:400;font-size:.78rem">{{ payment.created_at|date:"j M Y, H:i" }}</span></dd></div>
+  </dl>
+
+  {% if payment.invoice %}
+    <div class="doc-totals">
+      <div><span>Invoice total</span><span class="money">{{ CURRENCY }} {{ payment.invoice.total_amount|floatformat:0|intcomma }}</span></div>
+      <div><span>Paid to date</span><span class="money">{{ CURRENCY }} {{ payment.invoice.amount_paid|floatformat:0|intcomma }}</span></div>
+      <div class="grand"><span>Balance</span>
+        <span class="money" style="color:{% if payment.invoice.balance > 0 %}var(--danger){% else %}var(--success){% endif %}">
+          {{ CURRENCY }} {{ payment.invoice.balance|floatformat:0|intcomma }}</span></div>
+    </div>
+  {% endif %}
+
+  {% if payment.notes %}
+    <div class="alert mt-4"><i class="fas fa-note-sticky"></i><div>{{ payment.notes }}</div></div>
+  {% endif %}
+  {% if payment.reversal_reason %}
+    <div class="alert alert-error mt-3"><i class="fas fa-rotate-left"></i>
+      <div><strong>Reversed:</strong> {{ payment.reversal_reason }}</div></div>
+  {% endif %}
+
+  <div class="mt-4 center text-faint" style="font-size:.8rem;border-top:1px solid var(--line);padding-top:1.5rem">
+    {{ studio.studio_name }} &middot; {{ studio.tagline }}<br>
+    This receipt confirms a payment recorded by studio staff.
+  </div>
+</div>
+
+{% if payment.proof %}
+  <div class="panel mt-3 no-print">
+    <div class="panel-head"><h3>Proof of payment</h3>
+      <a href="{{ payment.proof.url }}" target="_blank" rel="noopener" class="link-arrow">
+        Open <i class="fas fa-arrow-up-right-from-square"></i></a>
+    </div>
+    <div class="panel-body center">
+      <img src="{{ payment.proof.url }}" alt="Proof of payment"
+           style="max-height:420px;border-radius:var(--r-md);margin-inline:auto"
+           onerror="this.style.display='none'">
+    </div>
+  </div>
+{% endif %}
+
+{% if can_manage and payment.status == 'confirmed' %}
+  <div class="panel mt-3 no-print">
+    <div class="panel-head"><h3>Reverse this payment</h3></div>
+    <div class="panel-body">
+      <p class="text-soft mb-3" style="font-size:.9rem">
+        Use this when a mobile money payment bounced or was recorded in error.
+        The invoice balance is restored and the reversal is kept on the record.
+      </p>
+      <form method="post" action="{% url 'finance:payment_reverse' payment.pk %}"
+            data-confirm="Reverse {{ payment.receipt_number }}? The invoice balance will be restored.">
+        {% csrf_token %}
+        <div class="row gap-sm">
+          <input type="text" name="reason" class="form-input" placeholder="Why is this being reversed?" required style="flex:1">
+          <button class="btn btn-danger"><i class="fas fa-rotate-left"></i> Reverse</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

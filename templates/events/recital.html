@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% block body_class %}has-hero{% endblock %}
+
+{% block content %}
+
+<section class="hero" aria-label="{{ recital.title }}">
+  <div class="hero-media" aria-hidden="true">
+    {% if recital.hero_video or recital.hero_video_url %}
+      <video autoplay muted loop playsinline preload="metadata"
+             {% if recital.hero_image %}poster="{{ recital.hero_image.url }}"{% endif %}>
+        <source src="{% if recital.hero_video %}{{ recital.hero_video.url }}{% else %}{{ recital.hero_video_url }}{% endif %}" type="video/mp4">
+      </video>
+    {% elif recital.hero_image %}
+      <img src="{{ recital.hero_image.url }}" alt="">
+    {% endif %}
+  </div>
+  <div class="hero-veil"></div>
+
+  <div class="hero-content">
+    <span class="hero-kicker">{{ recital.year }} Annual Recital &middot; Sickle cell awareness</span>
+    <h1 class="hero-title">{{ recital.title }}</h1>
+    {% if recital.theme %}<p class="tagline mb-3">{{ recital.theme }}</p>{% endif %}
+    {% if recital.introduction %}<p class="hero-sub">{{ recital.introduction }}</p>{% endif %}
+
+    <div class="hero-actions">
+      <a href="#programme" class="btn btn-lg">See the programme <i class="fas fa-arrow-down"></i></a>
+      {% if recital.trailer_url %}
+        <a href="{{ recital.trailer_url }}" target="_blank" rel="noopener" class="btn btn-lg btn-ghost">
+          <i class="fas fa-play"></i> Watch the trailer
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <a href="#about-recital" class="scroll-cue"><span class="line"></span><span>Scroll</span></a>
+    {% if recital.hero_video or recital.hero_video_url %}
+      <button type="button" class="hero-sound" aria-label="Unmute background video"><i class="fas fa-volume-xmark"></i></button>
+    {% endif %}
+  </div>
+</section>
+
+{# ------------------------------------------------------ key details strip #}
+<section class="section-sm" style="background:var(--ink)">
+  <div class="wrap">
+    <div class="grid grid-4">
+      <div class="center">
+        <div class="kicker">Date</div>
+        <strong style="color:#fff;font-size:1.1rem">{{ recital.performance_date|date:"l j F Y" }}</strong>
+        {% if recital.additional_dates %}<div class="text-faint" style="font-size:.8rem">{{ recital.additional_dates }}</div>{% endif %}
+      </div>
+      <div class="center">
+        <div class="kicker">Curtain up</div>
+        <strong style="color:#fff;font-size:1.1rem">{{ recital.start_time|time:"H:i"|default:"18:00" }}</strong>
+        {% if recital.doors_open_time %}<div class="text-faint" style="font-size:.8rem">Doors {{ recital.doors_open_time|time:"H:i" }}</div>{% endif %}
+      </div>
+      <div class="center">
+        <div class="kicker">Venue</div>
+        <strong style="color:#fff;font-size:1.1rem">{{ recital.venue_name|default:"To be confirmed" }}</strong>
+        {% if recital.venue_address %}<div class="text-faint" style="font-size:.8rem">{{ recital.venue_address }}</div>{% endif %}
+      </div>
+      <div class="center">
+        <div class="kicker">On stage</div>
+        <strong style="color:#fff;font-size:1.1rem">{{ recital.cast_size }} dancer{{ recital.cast_size|pluralize }}</strong>
+        <div class="text-faint" style="font-size:.8rem">Every dancer performs</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if recital.is_upcoming %}
+<section class="section-sm section-warm">
+  <div class="wrap center">
+    <span class="kicker">Curtain up in</span>
+    <div class="countdown" style="justify-content:center" data-countdown="{{ recital.performance_date|date:'Y-m-d' }}T{{ recital.start_time|date:'H:i'|default:'18:00' }}:00">
+      <div class="countdown-unit" style="background:#fff;border-color:var(--line)">
+        <strong data-unit="days" style="color:var(--plum)">—</strong><span style="color:var(--text-faint)">Days</span></div>
+      <div class="countdown-unit" style="background:#fff;border-color:var(--line)">
+        <strong data-unit="hours" style="color:var(--plum)">—</strong><span style="color:var(--text-faint)">Hours</span></div>
+      <div class="countdown-unit" style="background:#fff;border-color:var(--line)">
+        <strong data-unit="minutes" style="color:var(--plum)">—</strong><span style="color:var(--text-faint)">Minutes</span></div>
+      <div class="countdown-unit" style="background:#fff;border-color:var(--line)">
+        <strong data-unit="seconds" style="color:var(--plum)">—</strong><span style="color:var(--text-faint)">Seconds</span></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ------------------------------------------------------------ the story #}
+<section class="section" id="about-recital">
+  <div class="wrap">
+    <div class="split">
+      <div data-reveal="left">
+        <span class="kicker">The performance</span>
+        <h2>{{ recital.title }}</h2>
+        <div class="rule mb-3"></div>
+        {% if recital.description %}<div class="lede">{{ recital.description|linebreaks }}</div>{% endif %}
+
+        {% if recital.director_note %}
+          <blockquote class="mt-4" style="border-left:4px solid var(--pink);padding-left:1.5rem;font-family:var(--font-display);font-size:1.2rem;font-style:italic;color:var(--plum)">
+            {{ recital.director_note }}
+          </blockquote>
+        {% endif %}
+      </div>
+
+      <div class="split-media" data-reveal="right">
+        {% if recital.poster %}<img src="{{ recital.poster.url }}" alt="{{ recital.title }} poster">
+        {% elif recital.hero_image %}<img src="{{ recital.hero_image.url }}" alt="{{ recital.title }}">
+        {% else %}<div class="media-placeholder"><i class="fas fa-masks-theater"></i></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{# --------------------------------------------------- sickle cell awareness #}
+{% if recital.sickle_cell_message %}
+<section class="section section-plum">
+  <div class="wrap">
+    <div class="split">
+      <div data-reveal="left">
+        <span class="ribbon"><i class="fas fa-ribbon"></i> Why we dance</span>
+        <h2>Sickle cell awareness</h2>
+        <div class="rule mb-3"></div>
+        <div class="lede" style="color:rgba(255,255,255,.84)">{{ recital.sickle_cell_message|linebreaks }}</div>
+
+        {% if recital.beneficiary %}
+          <p class="mt-3" style="color:rgba(255,255,255,.7)">
+            Proceeds support <strong style="color:#fff">{{ recital.beneficiary }}</strong>.
+            {% if recital.beneficiary_url %}
+              <a href="{{ recital.beneficiary_url }}" target="_blank" rel="noopener" class="text-pink">Learn more</a>.
+            {% endif %}
+          </p>
+        {% endif %}
+      </div>
+
+      <div data-reveal="right">
+        {% if recital.fundraising_goal %}
+          <div class="card card-flat" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)">
+            <div class="card-body">
+              <span class="kicker">Raised so far</span>
+              <div style="font-family:var(--font-display);font-size:2.6rem;color:#fff;line-height:1">
+                {{ CURRENCY }} {{ recital.amount_raised|floatformat:0 }}
+              </div>
+              <p style="color:rgba(255,255,255,.6);font-size:.88rem" class="mt-1">
+                of a {{ CURRENCY }} {{ recital.fundraising_goal|floatformat:0 }} goal
+              </p>
+              <div class="bar bar-lg mt-3" style="background:rgba(255,255,255,.12)">
+                <span style="width:{{ recital.fundraising_percent|default:0 }}%"></span>
+              </div>
+              <p class="mt-2" style="color:rgba(255,255,255,.5);font-size:.8rem">
+                {{ recital.fundraising_percent|default:0 }}% of the way there
+              </p>
+              <a href="{% url 'website:contact' %}?topic=partnership" class="btn btn-block mt-3">
+                Support the cause
+              </a>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if sickle_cell_partners %}
+          <div class="mt-3">
+            <span class="kicker">Awareness partners</span>
+            <div class="stack mt-2">
+              {% for partner in sickle_cell_partners %}
+                <div class="row gap-sm" style="color:rgba(255,255,255,.8)">
+                  <i class="fas fa-ribbon text-pink"></i> {{ partner.name }}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ------------------------------------------------------------- programme #}
+{% if performances %}
+<section class="section" id="programme">
+  <div class="wrap">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">The evening</span>
+      <h2>Programme</h2>
+      <div class="rule"></div>
+    </div>
+
+    <div class="wrap-tight" style="margin-inline:auto">
+      {% for act, items in acts.items %}
+        <h3 class="mt-4 mb-3 text-plum" style="border-bottom:2px solid var(--pink);padding-bottom:.6rem">{{ act }}</h3>
+        {% for item in items %}
+          <article class="card card-flat mb-2" data-reveal>
+            <div class="card-body row-between" style="align-items:flex-start">
+              <div style="flex:1;min-width:0">
+                <div class="row gap-sm">
+                  <span class="avatar avatar-sm" style="background:var(--paper-warm);color:var(--plum)">{{ item.order }}</span>
+                  <div>
+                    <h4 style="font-size:1.12rem">{{ item.title }}</h4>
+                    {% if item.music %}<p class="text-soft" style="font-size:.86rem;font-style:italic">{{ item.music }}</p>{% endif %}
+                  </div>
+                </div>
+                <div class="meta mt-2">
+                  {% if item.choreographer %}<span><i class="fas fa-feather"></i> {{ item.choreographer }}</span>{% endif %}
+                  {% if item.dance_class %}<span><i class="fas fa-users"></i> {{ item.dance_class.name }}</span>{% endif %}
+                  {% if item.duration_minutes %}<span><i class="fas fa-clock"></i> {{ item.duration_minutes }} min</span>{% endif %}
+                </div>
+                {% if item.description %}<p class="mt-2" style="font-size:.9rem">{{ item.description }}</p>{% endif %}
+
+                {% if item.cast.all %}
+                  <details class="mt-3">
+                    <summary style="cursor:pointer;font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--pink)">
+                      Cast ({{ item.cast.all|length }})
+                    </summary>
+                    <div class="row gap-sm mt-2">
+                      {% for member in item.cast.all %}
+                        <span class="pill">{{ member.student.display_name }}{% if member.role_name %} &middot; {{ member.role_name }}{% endif %}</span>
+                      {% endfor %}
+                    </div>
+                  </details>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    {% if recital.programme_pdf %}
+      <div class="center mt-4">
+        <a href="{{ recital.programme_pdf.url }}" class="btn btn-outline" target="_blank" rel="noopener">
+          <i class="fas fa-file-pdf"></i> Download the printed programme
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{# --------------------------------------------------------------- tickets #}
+<section class="section section-warm" id="tickets">
+  <div class="wrap">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">Come and watch</span>
+      <h2>Tickets</h2>
+      <div class="rule"></div>
+      <p>Tickets are sold at the studio office and on the door &mdash; not online.</p>
+    </div>
+
+    <div class="grid grid-3">
+      {% if recital.ticket_price_child %}
+        <div class="card card-flat center" data-reveal>
+          <div class="card-body">
+            <span class="kicker">Child</span>
+            <div style="font-family:var(--font-display);font-size:2.4rem;color:var(--plum)">
+              {{ CURRENCY }} {{ recital.ticket_price_child|floatformat:0 }}</div>
+            <p class="text-soft mt-1" style="font-size:.86rem">Under 12</p>
+          </div>
+        </div>
+      {% endif %}
+      {% if recital.ticket_price_regular %}
+        <div class="card center" data-reveal style="border-color:var(--pink);border-width:2px">
+          <div class="card-body">
+            <span class="pill pill-pink mb-2">Most popular</span>
+            <span class="kicker">Regular</span>
+            <div style="font-family:var(--font-display);font-size:2.8rem;color:var(--plum)">
+              {{ CURRENCY }} {{ recital.ticket_price_regular|floatformat:0 }}</div>
+            <p class="text-soft mt-1" style="font-size:.86rem">General seating</p>
+          </div>
+        </div>
+      {% endif %}
+      {% if recital.ticket_price_vip %}
+        <div class="card card-flat center" data-reveal>
+          <div class="card-body">
+            <span class="kicker">VIP</span>
+            <div style="font-family:var(--font-display);font-size:2.4rem;color:var(--plum)">
+              {{ CURRENCY }} {{ recital.ticket_price_vip|floatformat:0 }}</div>
+            <p class="text-soft mt-1" style="font-size:.86rem">Front rows &amp; programme</p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if recital.ticket_info %}
+      <div class="alert mt-4" style="max-width:640px;margin-inline:auto">
+        <i class="fas fa-circle-info"></i>
+        <div>{{ recital.ticket_info }}</div>
+      </div>
+    {% endif %}
+
+    <div class="center mt-4">
+      <a href="{% url 'website:contact' %}?topic=recital" class="btn btn-lg">Reserve tickets</a>
+    </div>
+  </div>
+</section>
+
+{# --------------------------------------------------------------- gallery #}
+{% if gallery %}
+<section class="section">
+  <div class="wrap">
+    <div class="row-between mb-4">
+      <div><span class="kicker">Last year</span><h2>{{ gallery.title }}</h2></div>
+      <a href="{{ gallery.get_absolute_url }}" class="link-arrow">All photos <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="gallery-grid">
+      {% for photo in gallery.images.all|slice:":8" %}
+        <figure class="gallery-item" data-lightbox="{{ photo.image.url }}" data-caption="{{ photo.caption }}" tabindex="0">
+          <img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:photo.caption }}" loading="lazy">
+        </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# -------------------------------------------------------------- partners #}
+{% if partners %}
+<section class="section-sm section-warm">
+  <div class="wrap center">
+    <span class="kicker">With thanks to our partners</span>
+    <div class="row gap-lg mt-3" style="justify-content:center">
+      {% for partner in partners %}
+        {% if partner.logo %}
+          <img src="{{ partner.logo.url }}" alt="{{ partner.name }}" style="height:48px;opacity:.7">
+        {% else %}
+          <span class="pill pill-plum">{{ partner.name }}</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# --------------------------------------------------------------- archive #}
+{% if archive %}
+<section class="section">
+  <div class="wrap">
+    <div class="row-between mb-4">
+      <div><span class="kicker">Looking back</span><h2>Past recitals</h2></div>
+      <a href="{% url 'events:recital_archive' %}" class="link-arrow">Full archive <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="grid grid-3">
+      {% for past in archive %}
+        <a href="{{ past.get_absolute_url }}" class="card" data-reveal>
+          <div class="card-media" style="aspect-ratio:16/10">
+            {% if past.hero_image %}<img src="{{ past.hero_image.url }}" alt="{{ past.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas fa-masks-theater"></i></div>{% endif %}
+            <span class="card-tag">{{ past.year }}</span>
+          </div>
+          <div class="card-body">
+            <h3 style="font-size:1.1rem">{{ past.title }}</h3>
+            {% if past.theme %}<p class="mt-1">{{ past.theme }}</p>{% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

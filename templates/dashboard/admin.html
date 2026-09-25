@@ -1,0 +1,296 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Good to see you{% if user.first_name %}, {{ user.first_name }}{% endif %}</h1>
+    <p>{{ studio.studio_name }}{% if term %} &middot; {{ term }}{% endif %} &middot; {{ summary.start|date:"j M" }}&ndash;{{ summary.end|date:"j M Y" }}</p>
+  </div>
+  <div class="row gap-sm">
+    <a href="{% url 'finance:payment_create' %}" class="btn btn-sm"><i class="fas fa-plus"></i> Record a payment</a>
+    <a href="{% url 'academics:student_create' %}" class="btn btn-sm btn-outline"><i class="fas fa-user-plus"></i> Add a dancer</a>
+  </div>
+</div>
+
+{% if pending_count %}
+  <div class="alert alert-warning">
+    <i class="fas fa-user-clock"></i>
+    <div>
+      <strong>{{ pending_count }} account{{ pending_count|pluralize }} waiting for verification.</strong>
+      New parents and staff cannot use the system until you approve them.
+      <a href="{% url 'dashboard:verification_queue' %}" class="text-pink" style="font-weight:600">Review now &rarr;</a>
+    </div>
+  </div>
+{% endif %}
+
+{% if registers_due_count %}
+  <div class="alert alert-warning">
+    <i class="fas fa-clipboard-list"></i>
+    <div>
+      <strong>{{ registers_due_count }} register{{ registers_due_count|pluralize }} not yet taken.</strong>
+      <a href="{% url 'academics:register_list' %}" class="text-pink" style="font-weight:600">Take them &rarr;</a>
+    </div>
+  </div>
+{% endif %}
+
+{# ------------------------------------------------------------------ KPIs #}
+<div class="kpi-grid">
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-up"></i> Income this month</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.total_income|floatformat:0|intcomma }}</div>
+    <div class="kpi-note"><span>{{ summary.payment_count }} payment{{ summary.payment_count|pluralize }} recorded</span></div>
+  </div>
+
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-down"></i> Expenses this month</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.total_expenses|floatformat:0|intcomma }}</div>
+    <div class="kpi-note"><span>{{ summary.expense_count }} entr{{ summary.expense_count|pluralize:"y,ies" }}</span></div>
+  </div>
+
+  <div class="kpi {% if summary.net >= 0 %}kpi-pink{% else %}kpi-red{% endif %}">
+    <div class="kpi-label"><i class="fas fa-scale-balanced"></i> Net position</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.net|floatformat:0|intcomma }}</div>
+    <div class="kpi-note">
+      {% if summary.margin_percent is not None %}<span>{{ summary.margin_percent }}% margin</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="kpi kpi-red">
+    <div class="kpi-label"><i class="fas fa-hourglass-half"></i> Outstanding fees</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.outstanding|floatformat:0|intcomma }}</div>
+    <div class="kpi-note"><span>{{ summary.overdue_count }} invoice{{ summary.overdue_count|pluralize }} overdue</span></div>
+  </div>
+
+  <div class="kpi kpi-gold">
+    <div class="kpi-label"><i class="fas fa-child-reaching"></i> Active dancers</div>
+    <div class="kpi-value">{{ active_students }}</div>
+    <div class="kpi-note"><span>+{{ new_students_this_month }} joined this month</span></div>
+  </div>
+
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-users"></i> Studio community</div>
+    <div class="kpi-value">{{ staff_count }} <small>staff</small></div>
+    <div class="kpi-note"><span>{{ guardian_count }} families &middot; {{ class_count }} classes</span></div>
+  </div>
+</div>
+
+{# ---------------------------------------------------------------- charts #}
+<div class="chart-grid wide-first mb-3">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Income vs expenses</h3>
+      <a href="{% url 'finance:reports' %}" class="link-arrow">Full reports <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body">
+      <div class="chart-box"><canvas id="chart-income-expense"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Where the money goes</h3></div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-expense-breakdown"></canvas></div>
+      <ul class="breakdown mt-3">
+        {% for row in expense_breakdown %}
+          <li>
+            <span class="swatch" style="background:{{ row.colour }}"></span>
+            <span class="truncate">{{ row.label }}</span>
+            <span class="amount">{{ CURRENCY }} {{ row.amount|floatformat:0|intcomma }}<span class="pct">{{ row.percent }}%</span></span>
+          </li>
+        {% empty %}
+          <li style="grid-column:1/-1"><span class="text-faint">No expenses recorded this month.</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>How families pay</h3></div>
+    <div class="panel-body">
+      <div class="chart-box short"><canvas id="chart-methods"></canvas></div>
+    </div>
+  </div>
+</div>
+
+{# ------------------------------------------------------------ operations #}
+<div class="chart-grid">
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Today at the studio</h3>
+      <a href="{% url 'academics:timetable' %}" class="link-arrow">Timetable <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      {% for session in today_sessions %}
+        <a href="{% url 'academics:register' session.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ session.dance_class.program.accent_colour }}">
+              <i class="fas fa-shoe-prints" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ session.dance_class.name }}</strong>
+              <span>{{ session.start_time|time:"H:i" }}&ndash;{{ session.end_time|time:"H:i" }}
+                {% if session.studio %}&middot; {{ session.studio.name }}{% endif %}</span>
+            </div>
+          </div>
+          {% if session.register_taken %}
+            <span class="pill pill-success">Register taken</span>
+          {% else %}
+            <span class="pill pill-warning">Register due</span>
+          {% endif %}
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem">
+          <i class="fas fa-mug-hot"></i><p>No classes scheduled today.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Recent payments</h3>
+      <a href="{% url 'finance:payment_list' %}" class="link-arrow">All payments <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Receipt</th><th>Dancer</th><th>Method</th><th class="money">Amount</th></tr></thead>
+          <tbody>
+            {% for payment in recent_payments %}
+              <tr onclick="window.location='{% url 'finance:payment_detail' payment.pk %}'" style="cursor:pointer">
+                <td><span class="mono">{{ payment.receipt_number }}</span><br>
+                    <span class="text-faint" style="font-size:.74rem">{{ payment.payment_date|date:"j M" }}{% if payment.payment_time %} {{ payment.payment_time|time:"H:i" }}{% endif %}</span></td>
+                <td>{{ payment.student.full_name|default:"—" }}</td>
+                <td><span class="pill">{{ payment.get_method_display }}</span></td>
+                <td class="money">{{ CURRENCY }} {{ payment.amount|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="padding:2rem"><i class="fas fa-receipt"></i><p>No payments recorded yet.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Chase list</h3>
+      <a href="{% url 'finance:invoice_list' %}?status=overdue" class="link-arrow">All overdue <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Invoice</th><th>Dancer</th><th>Due</th><th class="money">Owing</th></tr></thead>
+          <tbody>
+            {% for invoice in outstanding_invoices %}
+              <tr onclick="window.location='{% url 'finance:invoice_detail' invoice.pk %}'" style="cursor:pointer">
+                <td><span class="mono">{{ invoice.number }}</span></td>
+                <td>{{ invoice.student.full_name }}</td>
+                <td>
+                  {% if invoice.is_overdue %}
+                    <span class="pill pill-danger">{{ invoice.days_overdue }}d late</span>
+                  {% else %}
+                    {{ invoice.due_date|date:"j M" }}
+                  {% endif %}
+                </td>
+                <td class="money">{{ CURRENCY }} {{ invoice.balance|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="padding:2rem"><i class="fas fa-circle-check"></i><p>Every invoice is settled.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Attendance needing a look</h3>
+      <a href="{% url 'academics:attendance' %}" class="link-arrow">Attendance <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      {% for row in attendance_concerns %}
+        <a href="{% url 'academics:student_detail' row.student.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm">{{ row.student.initials }}</span>
+            <div>
+              <strong>{{ row.student.full_name }}</strong>
+              <span>{{ row.attended }} of {{ row.total }} sessions attended</span>
+            </div>
+          </div>
+          <span class="pill {% if row.rate < 50 %}pill-danger{% else %}pill-warning{% endif %}">{{ row.rate }}%</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem">
+          <i class="fas fa-circle-check"></i><p>Attendance is healthy across the studio.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Waiting for verification</h3>
+      <a href="{% url 'dashboard:verification_queue' %}" class="link-arrow">Review all <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      {% for person in pending_users %}
+        <div class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm">{{ person.initials }}</span>
+            <div>
+              <strong>{{ person.display_name }}</strong>
+              <span>{{ person.get_role_display }} &middot; {{ person.created_at|timesince }} ago</span>
+            </div>
+          </div>
+          <div class="row gap-sm">
+            <form method="post" action="{% url 'dashboard:quick_verify' person.pk %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-success"><i class="fas fa-check"></i> Verify</button>
+            </form>
+            <a href="{% url 'dashboard:user_detail' person.pk %}" class="btn btn-sm btn-quiet">Review</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem">
+          <i class="fas fa-circle-check"></i><p>Everyone is verified.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Coming up</h3>
+      <a href="{% url 'events:calendar' %}" class="link-arrow">Calendar <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="panel-body flush">
+      {% for event in upcoming_events %}
+        <a href="{{ event.get_absolute_url }}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm" style="background:{{ event.category.colour|default:'#EE2A7B' }}">
+              <i class="fas {{ event.category.icon|default:'fa-calendar-day' }}" style="font-size:.7rem"></i>
+            </span>
+            <div>
+              <strong>{{ event.title }}</strong>
+              <span>{{ event.start_at|date:"l j F" }} &middot; {{ event.duration_display }}</span>
+            </div>
+          </div>
+          <span class="pill">{{ event.days_until }}d</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:2.5rem 1rem"><i class="fas fa-calendar"></i><p>Nothing scheduled yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+{{ series|json_script:"data-series" }}
+{{ expense_chart|json_script:"data-expenses" }}
+{{ method_chart|json_script:"data-methods" }}
+{% endblock %}

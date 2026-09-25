@@ -1,0 +1,33 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Notifications</h1><p>Everything the studio has sent you.</p></div>
+  {% if unread_notifications %}
+    <form method="post" action="{% url 'accounts:notifications_read_all' %}">
+      {% csrf_token %}
+      <button class="btn btn-sm btn-outline"><i class="fas fa-check-double"></i> Mark all read</button>
+    </form>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <div class="panel-body flush">
+    {% for note in page_obj %}
+      <a class="note-item {% if not note.is_read %}unread{% endif %} level-{{ note.level }}" href="{{ note.url|default:'#' }}">
+        <span class="ico"><i class="fas {{ note.icon|default:'fa-bell' }}"></i></span>
+        <span style="min-width:0;flex:1">
+          <strong>{{ note.title }}</strong>
+          {% if note.message %}<p>{{ note.message }}</p>{% endif %}
+          <time>{{ note.created_at|date:"j M Y, H:i" }} &middot; {{ note.created_at|timesince }} ago</time>
+        </span>
+        {% if not note.is_read %}<span class="pill pill-pink">New</span>{% endif %}
+      </a>
+    {% empty %}
+      <div class="empty"><i class="fas fa-bell-slash"></i><h3>No notifications yet</h3></div>
+    {% endfor %}
+  </div>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

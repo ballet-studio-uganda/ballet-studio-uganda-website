@@ -1,0 +1,74 @@
+{% load static studio %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1a0a12">
+
+<title>{% block title %}{{ page_title|default:studio.studio_name }} · {{ studio.short_name|default:"BDSU" }}{% endblock %}</title>
+<meta name="description" content="{% block meta_description %}{{ meta_description|default:"Ballet Dance Studio UG — classical ballet training in Kampala. Resilience. Hope. Dreams." }}{% endblock %}">
+
+{# Social preview #}
+<meta property="og:site_name" content="{{ studio.studio_name }}">
+<meta property="og:title" content="{{ page_title|default:studio.studio_name }}">
+<meta property="og:description" content="{{ meta_description|default:studio.tagline }}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+{% if studio.og_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ studio.og_image.url }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+{% block extra_meta %}{% endblock %}
+
+{% if studio.favicon %}<link rel="icon" href="{{ studio.favicon.url }}">{% else %}<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩰</text></svg>">{% endif %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..700&family=Montserrat:wght@300;400;500;600;700;800&family=Italianno&family=Michroma&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<link rel="stylesheet" href="{% static_v 'css/brand.css' %}">
+<link rel="stylesheet" href="{% static_v 'css/site.css' %}">
+{% block extra_css %}{% endblock %}
+
+{% if studio.google_analytics_id and not DEBUG %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ studio.google_analytics_id }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ studio.google_analytics_id }}');
+</script>
+{% endif %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+<a href="#main" class="skip-link">Skip to content</a>
+
+{% if studio.show_announcement_bar and bar_announcement %}
+  {% include 'includes/announcement_bar.html' %}
+{% endif %}
+
+{% include 'includes/navbar.html' %}
+
+<main id="main">
+  {% block content %}{% endblock %}
+</main>
+
+{% include 'includes/footer.html' %}
+
+{% if messages %}
+<div class="toast-stack" role="status" aria-live="polite">
+  {% for message in messages %}
+  <div class="toast toast-{{ message.tags|default:'info' }}">
+    <i class="fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+    <span>{{ message }}</span>
+    <button type="button" aria-label="Dismiss"><i class="fas fa-xmark"></i></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.12/htmx.min.js" defer></script>
+<script src="{% static_v 'js/site.js' %}" defer></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

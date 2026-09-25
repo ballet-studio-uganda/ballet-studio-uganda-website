@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>Contact</span></nav>
+    <span class="kicker">Say hello</span>
+    <h1>Get in touch</h1>
+    <p class="lede">We answer every message, usually within two working days.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="split" style="align-items:start">
+
+      <div data-reveal="left">
+        <h2>Send us a message</h2>
+        <div class="rule mb-3"></div>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% include 'includes/form.html' %}
+          <button type="submit" class="btn btn-lg mt-2">Send message <i class="fas fa-paper-plane"></i></button>
+        </form>
+      </div>
+
+      <div data-reveal="right">
+        <div class="card card-flat">
+          <div class="card-body">
+            <h3>Find the studio</h3>
+            <ul class="stack mt-3">
+              {% if studio.phone %}<li class="row gap-sm"><i class="fas fa-phone text-pink"></i> <a href="tel:{{ studio.phone }}">{{ studio.phone }}</a></li>{% endif %}
+              {% if studio.whatsapp %}<li class="row gap-sm"><i class="fab fa-whatsapp text-pink"></i> <a href="https://wa.me/{{ studio.whatsapp|cut:'+'|cut:' ' }}">{{ studio.whatsapp }}</a></li>{% endif %}
+              {% if studio.email %}<li class="row gap-sm"><i class="fas fa-envelope text-pink"></i> <a href="mailto:{{ studio.email }}">{{ studio.email }}</a></li>{% endif %}
+              <li class="row gap-sm"><i class="fas fa-location-dot text-pink"></i> {{ studio.address }}</li>
+            </ul>
+
+            {% if studio.opening_hours_list %}
+              <h4 class="mt-4 mb-2">Opening hours</h4>
+              <ul class="stack">
+                {% for line in studio.opening_hours_list %}<li style="font-size:.9rem;color:var(--text-soft)">{{ line }}</li>{% endfor %}
+              </ul>
+            {% endif %}
+
+            <div class="socials mt-4" style="justify-content:flex-start">
+              {% for icon, url in studio.social_links %}
+                <a href="{{ url }}" target="_blank" rel="noopener" style="background:var(--paper-warm);color:var(--plum)" aria-label="Social link"><i class="{{ icon }}"></i></a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        {% if studio.map_embed_url %}
+          <div class="card card-flat mt-3" style="overflow:hidden">
+            <iframe src="{{ studio.map_embed_url }}" title="Map to the studio" width="100%" height="300" style="border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+        {% endif %}
+
+        {% if faqs %}
+          <h3 class="mt-4 mb-2">Quick answers</h3>
+          <div class="accordion">
+            {% for faq in faqs %}
+              <div class="accordion-item">
+                <button type="button" class="accordion-head">{{ faq.question }} <i class="fas fa-plus"></i></button>
+                <div class="accordion-body"><div><p>{{ faq.answer }}</p></div></div>
+              </div>
+            {% endfor %}
+          </div>
+          <a href="{% url 'website:faqs' %}" class="link-arrow mt-3">All questions <i class="fas fa-arrow-right"></i></a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

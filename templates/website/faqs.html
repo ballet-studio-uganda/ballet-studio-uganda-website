@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>FAQs</span></nav>
+    <span class="kicker">Good questions</span>
+    <h1>Frequently asked</h1>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap wrap-tight">
+    {% for category, items in grouped.items %}
+      <h2 class="mt-4 mb-2">{{ category }}</h2>
+      <div class="accordion mb-4">
+        {% for faq in items %}
+          <div class="accordion-item">
+            <button type="button" class="accordion-head">{{ faq.question }} <i class="fas fa-plus"></i></button>
+            <div class="accordion-body"><div><p>{{ faq.answer|linebreaks }}</p></div></div>
+          </div>
+        {% endfor %}
+      </div>
+    {% empty %}
+      <div class="empty"><i class="fas fa-circle-question"></i><h3>No questions published yet</h3></div>
+    {% endfor %}
+
+    <div class="card card-flat center mt-4">
+      <div class="card-body">
+        <h3>Still stuck?</h3>
+        <p class="text-soft mt-1">Ask us directly &mdash; we are happy to help.</p>
+        <a href="{% url 'website:contact' %}" class="btn mt-3">Contact the studio</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

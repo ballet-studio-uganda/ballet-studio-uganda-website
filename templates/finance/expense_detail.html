@@ -1,0 +1,66 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head no-print">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'finance:expense_list' %}">Expenses</a><i class="fas fa-chevron-right"></i>
+      <span>{{ expense.reference }}</span>
+    </nav>
+    <h1>{{ expense.description }}</h1>
+  </div>
+  <div class="row gap-sm">
+    <button onclick="window.print()" class="btn btn-sm btn-outline"><i class="fas fa-print"></i> Print</button>
+    <a href="{% url 'finance:expense_edit' expense.pk %}" class="btn btn-sm"><i class="fas fa-pen"></i> Edit</a>
+  </div>
+</div>
+
+<div class="doc">
+  <div class="doc-head">
+    <div>
+      <span class="brand-name">Ballet</span>
+      <div class="brand-sub" style="color:var(--text-faint)">Dance Studio UG</div>
+    </div>
+    <div class="doc-ref">
+      <h2>Expense record</h2>
+      <div class="number">{{ expense.reference }}</div>
+    </div>
+  </div>
+
+  <dl class="doc-meta">
+    <div><dt>Amount</dt><dd style="font-size:1.4rem;color:var(--plum)">{{ CURRENCY }} {{ expense.amount|floatformat:0|intcomma }}</dd></div>
+    <div><dt>Category</dt><dd>{{ expense.category.name }}</dd></div>
+    <div><dt>Date paid</dt><dd>{{ expense.expense_date|date:"j F Y" }}</dd></div>
+    <div><dt>Time</dt><dd>{% if expense.expense_time %}{{ expense.expense_time|time:"H:i" }}{% else %}—{% endif %}</dd></div>
+    <div><dt>Method</dt><dd>{{ expense.get_method_display }}</dd></div>
+    <div><dt>Transaction ID</dt><dd class="mono">{{ expense.transaction_id|default:"—" }}</dd></div>
+    <div><dt>Payee</dt><dd>{{ expense.payee_name|default:"—" }}
+      {% if expense.payee_contact %}<br><span class="text-faint" style="font-weight:400;font-size:.8rem">{{ expense.payee_contact }}</span>{% endif %}</dd></div>
+    <div><dt>Supplier invoice</dt><dd class="mono">{{ expense.invoice_reference|default:"—" }}</dd></div>
+    <div><dt>Status</dt><dd>{{ expense.get_status_display }}</dd></div>
+    {% if expense.event %}<div><dt>Event</dt><dd><a href="{{ expense.event.get_absolute_url }}" class="text-pink">{{ expense.event.title }}</a></dd></div>{% endif %}
+    <div><dt>Recorded by</dt><dd>{{ expense.recorded_by.display_name|default:"—" }}<br>
+      <span class="text-faint" style="font-weight:400;font-size:.78rem">{{ expense.created_at|date:"j M Y, H:i" }}</span></dd></div>
+    {% if expense.approved_by %}<div><dt>Approved by</dt><dd>{{ expense.approved_by.display_name }}</dd></div>{% endif %}
+  </dl>
+
+  {% if expense.notes %}
+    <div class="alert mt-4"><i class="fas fa-note-sticky"></i><div>{{ expense.notes }}</div></div>
+  {% endif %}
+</div>
+
+{% if expense.receipt %}
+  <div class="panel mt-3 no-print">
+    <div class="panel-head"><h3>Receipt</h3>
+      <a href="{{ expense.receipt.url }}" target="_blank" rel="noopener" class="link-arrow">
+        Open <i class="fas fa-arrow-up-right-from-square"></i></a>
+    </div>
+    <div class="panel-body center">
+      <img src="{{ expense.receipt.url }}" alt="Receipt"
+           style="max-height:420px;border-radius:var(--r-md);margin-inline:auto"
+           onerror="this.style.display='none'">
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

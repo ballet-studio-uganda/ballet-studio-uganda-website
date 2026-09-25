@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  {% if event.banner %}<img class="bg" src="{{ event.banner.url }}" alt="">
+  {% elif event.poster %}<img class="bg" src="{{ event.poster.url }}" alt="">{% endif %}
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'events:list' %}">What&rsquo;s on</a><i class="fas fa-chevron-right"></i>
+      <span>{{ event.title }}</span>
+    </nav>
+    {% if event.category %}<span class="kicker">{{ event.category.name }}</span>{% endif %}
+    <h1>{{ event.title }}</h1>
+    {% if event.summary %}<p class="lede">{{ event.summary }}</p>{% endif %}
+
+    {% if event.status == 'cancelled' %}
+      <div class="alert alert-error mt-3" style="max-width:600px">
+        <i class="fas fa-circle-exclamation"></i>
+        <div><strong>This event has been cancelled.</strong>
+          {% if event.cancellation_reason %} {{ event.cancellation_reason }}{% endif %}</div>
+      </div>
+    {% endif %}
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="split" style="align-items:start">
+      <div data-reveal="left">
+        {% if event.poster %}
+          <img src="{{ event.poster.url }}" alt="{{ event.title }} poster" class="mb-4" style="border-radius:var(--r-lg);width:100%">
+        {% endif %}
+        {% if event.description %}
+          <div class="article" style="max-width:none">{{ event.description|linebreaks }}</div>
+        {% endif %}
+      </div>
+
+      <div data-reveal="right">
+        <div class="card card-flat">
+          <div class="card-body">
+            <h3>Details</h3>
+            <dl class="doc-meta mt-3">
+              <div><dt>Date</dt><dd>{{ event.start_at|date:"l j F Y" }}</dd></div>
+              <div><dt>Time</dt><dd>{{ event.duration_display }}</dd></div>
+              {% if event.venue_name %}<div><dt>Venue</dt><dd>{{ event.venue_name }}</dd></div>{% endif %}
+              <div><dt>Tickets</dt><dd>{% if event.is_free %}Free{% else %}{{ CURRENCY }} {{ event.ticket_price|floatformat:0 }}{% endif %}</dd></div>
+            </dl>
+
+            {% if event.venue_address %}<p class="mt-2 text-soft" style="font-size:.88rem">{{ event.venue_address }}</p>{% endif %}
+            {% if event.map_url %}<a href="{{ event.map_url }}" target="_blank" rel="noopener" class="link-arrow mt-2">Open in maps <i class="fas fa-arrow-up-right-from-square"></i></a>{% endif %}
+
+            {% if event.capacity %}
+              <div class="mt-3">
+                <div class="row-between mb-1" style="font-size:.8rem">
+                  <span class="text-soft">Seats taken</span>
+                  <strong>{{ event.seats_taken }} / {{ event.capacity }}</strong>
+                </div>
+                <div class="bar"><span style="width:{% widthratio event.seats_taken event.capacity 100 %}%"></span></div>
+              </div>
+            {% endif %}
+
+            {% if event.contact_name or event.contact_phone %}
+              <hr style="border:none;border-top:1px solid var(--line);margin:1.25rem 0">
+              <h4 class="mb-2">Questions?</h4>
+              {% if event.contact_name %}<p style="font-size:.9rem">{{ event.contact_name }}</p>{% endif %}
+              {% if event.contact_phone %}<p style="font-size:.9rem"><a href="tel:{{ event.contact_phone }}" class="text-pink">{{ event.contact_phone }}</a></p>{% endif %}
+              {% if event.contact_email %}<p style="font-size:.9rem"><a href="mailto:{{ event.contact_email }}" class="text-pink">{{ event.contact_email }}</a></p>{% endif %}
+            {% endif %}
+          </div>
+        </div>
+
+        {% if form %}
+          <div class="card card-flat mt-3">
+            <div class="card-body">
+              <h3>Reserve your seat{{ form.seats.value|default:1|pluralize }}</h3>
+              <p class="text-soft mb-3" style="font-size:.88rem">
+                {% if not event.is_free %}Payment is taken at the studio or on the door.{% endif %}
+              </p>
+              <form method="post" novalidate>
+                {% csrf_token %}
+                {% include 'includes/form.html' %}
+                <button type="submit" class="btn btn-block">Reserve</button>
+              </form>
+            </div>
+          </div>
+        {% elif event.requires_registration %}
+          <div class="alert alert-warning mt-3">
+            <i class="fas fa-circle-info"></i>
+            <div>Booking for this event is closed{% if event.seats_left == 0 %} &mdash; every seat is taken{% endif %}.</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="section-head center"><h2>Also coming up</h2><div class="rule"></div></div>
+    <div class="grid grid-3">
+      {% for other in related %}
+        <a href="{{ other.get_absolute_url }}" class="card" data-reveal>
+          <div class="card-body">
+            <div class="meta"><span><i class="fas fa-calendar"></i> {{ other.start_at|date:"j M Y" }}</span></div>
+            <h3 style="font-size:1.1rem" class="mt-2">{{ other.title }}</h3>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

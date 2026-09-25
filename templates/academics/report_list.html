@@ -1,0 +1,80 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>Progress reports</h1>
+    {% if period %}<p>{{ period.name }} &middot; open until {{ period.closes_on|date:"j F Y" }}</p>
+    {% else %}<p>No assessment period is open.</p>{% endif %}
+  </div>
+</div>
+
+{% if not period %}
+  <div class="alert alert-warning">
+    <i class="fas fa-triangle-exclamation"></i>
+    <div>No assessment period has been set up. An administrator can create one in the
+      Django admin under <strong>Academics &rarr; Assessment periods</strong>.</div>
+  </div>
+{% else %}
+
+  {% if completion %}
+    <div class="kpi-grid">
+      <div class="kpi kpi-pink">
+        <div class="kpi-label"><i class="fas fa-list-check"></i> Expected</div>
+        <div class="kpi-value">{{ completion.expected }}</div>
+        <div class="kpi-note"><span>enrolled dancers</span></div>
+      </div>
+      <div class="kpi kpi-gold">
+        <div class="kpi-label"><i class="fas fa-pen"></i> Written</div>
+        <div class="kpi-value">{{ completion.written }}</div>
+      </div>
+      <div class="kpi kpi-green">
+        <div class="kpi-label"><i class="fas fa-paper-plane"></i> Published</div>
+        <div class="kpi-value">{{ completion.published }}</div>
+        <div class="kpi-note"><span>{{ completion.percent }}% complete</span></div>
+      </div>
+      <div class="kpi kpi-plum">
+        <div class="kpi-label"><i class="fas fa-calendar"></i> Closes</div>
+        <div class="kpi-value" style="font-size:1.2rem">{{ period.closes_on|date:"j M" }}</div>
+        <div class="kpi-note"><span>{% if period.is_accepting %}Open now{% else %}Closed{% endif %}</span></div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if period.instructions %}
+    <div class="alert"><i class="fas fa-circle-info"></i><div>{{ period.instructions }}</div></div>
+  {% endif %}
+
+  <div class="panel">
+    <div class="panel-head"><h3>By class</h3></div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Class</th><th class="num">Dancers</th><th class="num">Written</th><th class="num">Published</th><th>Progress</th><th class="shrink"></th></tr></thead>
+          <tbody>
+            {% for row in rows %}
+              <tr onclick="window.location='{% url 'academics:report_class' row.dance_class.pk period.pk %}'" style="cursor:pointer">
+                <td>
+                  <strong>{{ row.dance_class.name }}</strong><br>
+                  <span class="text-faint" style="font-size:.74rem">{{ row.dance_class.program.name }}</span>
+                </td>
+                <td class="num">{{ row.expected }}</td>
+                <td class="num">{{ row.written }}</td>
+                <td class="num">{{ row.published }}</td>
+                <td style="min-width:140px">
+                  <div class="bar {% if row.published >= row.expected %}bar-success{% endif %}">
+                    <span style="width:{% if row.expected %}{% widthratio row.published row.expected 100 %}{% else %}0{% endif %}%"></span>
+                  </div>
+                </td>
+                <td class="shrink"><i class="fas fa-chevron-right text-faint"></i></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6"><div class="empty" style="padding:2.5rem"><i class="fas fa-chart-line"></i><p>No classes to report on.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

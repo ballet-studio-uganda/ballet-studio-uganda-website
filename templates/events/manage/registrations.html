@@ -1,0 +1,70 @@
+{% extends 'dashboard/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <h1>{{ event.title }}</h1>
+    <p>{{ event.start_at|date:"l j F Y" }} &middot; {{ event.seats_taken }} seat{{ event.seats_taken|pluralize }} taken</p>
+  </div>
+  <a href="{{ event.get_absolute_url }}" class="btn btn-sm btn-quiet" target="_blank" rel="noopener">
+    <i class="fas fa-arrow-up-right-from-square"></i> Public page
+  </a>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-pink">
+    <div class="kpi-label"><i class="fas fa-ticket"></i> Seats taken</div>
+    <div class="kpi-value">{{ event.seats_taken }}{% if event.capacity %} <small>/ {{ event.capacity }}</small>{% endif %}</div>
+  </div>
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-up"></i> Income</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.income|floatformat:0|intcomma }}</div>
+  </div>
+  <div class="kpi kpi-plum">
+    <div class="kpi-label"><i class="fas fa-arrow-trend-down"></i> Costs</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.expenses|floatformat:0|intcomma }}</div>
+  </div>
+  <div class="kpi {% if summary.net >= 0 %}kpi-gold{% else %}kpi-red{% endif %}">
+    <div class="kpi-label"><i class="fas fa-scale-balanced"></i> Net</div>
+    <div class="kpi-value">{{ CURRENCY }} {{ summary.net|floatformat:0|intcomma }}</div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Name</th><th>Contact</th><th class="num">Seats</th><th>Status</th>
+      <th>Booked</th><th class="shrink"></th></tr></thead>
+    <tbody>
+      {% for registration in registrations %}
+        <tr>
+          <td><strong>{{ registration.full_name }}</strong>
+            {% if registration.notes %}<br><span class="text-faint" style="font-size:.74rem">{{ registration.notes|truncatechars:40 }}</span>{% endif %}</td>
+          <td>{{ registration.email|default:"—" }}
+            {% if registration.phone %}<br><span class="text-faint" style="font-size:.74rem">{{ registration.phone }}</span>{% endif %}</td>
+          <td class="num">{{ registration.seats }}</td>
+          <td>
+            <span class="pill {% if registration.status == 'attended' %}pill-success{% elif registration.status == 'confirmed' %}pill-info{% elif registration.status == 'waitlist' %}pill-warning{% else %}pill{% endif %}">
+              {{ registration.get_status_display }}
+            </span>
+          </td>
+          <td>{{ registration.created_at|date:"j M Y" }}</td>
+          <td class="shrink">
+            {% if registration.status != 'attended' %}
+              <form method="post" action="{% url 'events:check_in' registration.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline"><i class="fas fa-check"></i> Check in</button>
+              </form>
+            {% else %}
+              <span class="pill pill-success">Checked in</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6"><div class="empty" style="padding:3rem">
+          <i class="fas fa-ticket"></i><h3>No registrations yet</h3></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

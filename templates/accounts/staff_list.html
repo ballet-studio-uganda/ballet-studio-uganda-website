@@ -1,0 +1,54 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Faculty &amp; team</h1><p>{{ staff|length }} active staff member{{ staff|length|pluralize }}.</p></div>
+  <a href="{% url 'website:faculty' %}" class="btn btn-sm btn-quiet" target="_blank" rel="noopener">
+    <i class="fas fa-arrow-up-right-from-square"></i> Public faculty page
+  </a>
+</div>
+
+<div class="chart-grid">
+  {% for member in staff %}
+    <div class="panel">
+      <div class="panel-head">
+        <div class="row gap-sm">
+          <span class="avatar">
+            {% if member.user.photo %}<img src="{{ member.user.photo.url }}" alt="">{% else %}{{ member.user.initials }}{% endif %}
+          </span>
+          <div>
+            <h3>{{ member.user.display_name }}</h3>
+            <span class="text-faint" style="font-size:.78rem">{{ member.job_title|default:member.user.get_role_display }}</span>
+          </div>
+        </div>
+        <a href="{% url 'dashboard:staff_detail' member.pk %}" class="btn btn-sm btn-quiet"><i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="panel-body">
+        <div class="meta mb-2">
+          <span><i class="fas fa-id-badge"></i> {{ member.staff_id }}</span>
+          <span><i class="fas fa-briefcase"></i> {{ member.get_employment_type_display }}</span>
+        </div>
+        <div class="meta mb-3">
+          {% if member.user.phone %}<span><i class="fas fa-phone"></i> {{ member.user.phone }}</span>{% endif %}
+          <span><i class="fas fa-envelope"></i> {{ member.user.email }}</span>
+        </div>
+        {% if member.classes_taught.exists %}
+          <div class="row gap-sm">
+            {% for dance_class in member.classes_taught.all|slice:":4" %}
+              <span class="pill pill-pink">{{ dance_class.name|truncatechars:20 }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <span class="text-faint" style="font-size:.85rem">No classes assigned.</span>
+        {% endif %}
+        {% if member.show_on_website %}
+          <div class="mt-3"><span class="pill pill-success"><i class="fas fa-globe"></i> On the website</span></div>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <div class="empty" style="grid-column:1/-1"><i class="fas fa-chalkboard-user"></i>
+      <h3>No staff records yet</h3></div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  {% if post.cover_image %}<img class="bg" src="{{ post.cover_image.url }}" alt="">{% endif %}
+  <div class="wrap wrap-tight">
+    <nav class="crumbs">
+      <a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'website:news_list' %}">News</a><i class="fas fa-chevron-right"></i>
+      <span>{{ post.category.name|default:"Story" }}</span>
+    </nav>
+    <h1>{{ post.title }}</h1>
+    <div class="meta mt-3" style="color:rgba(255,255,255,.6)">
+      {% if post.author %}<span><i class="fas fa-pen-nib"></i> {{ post.author.display_name }}</span>{% endif %}
+      <span><i class="fas fa-calendar"></i> {{ post.published_at|date:"j F Y" }}</span>
+      <span><i class="fas fa-clock"></i> {{ post.reading_minutes }} min read</span>
+    </div>
+  </div>
+</header>
+
+<article class="section">
+  <div class="wrap">
+    {% if post.cover_image %}
+      <figure class="mb-4" data-reveal>
+        <img src="{{ post.cover_image.url }}" alt="{{ post.title }}" style="width:100%;border-radius:var(--r-lg)">
+        {% if post.cover_caption %}<figcaption class="center mt-2" style="font-size:.82rem;color:var(--text-faint)">{{ post.cover_caption }}</figcaption>{% endif %}
+      </figure>
+    {% endif %}
+
+    <div class="article">
+      {% if post.excerpt %}<p class="lede">{{ post.excerpt }}</p>{% endif %}
+      {{ post.body|safe }}
+    </div>
+
+    {% if post.tag_list %}
+      <div class="wrap-tight row gap-sm mt-4" style="margin-inline:auto">
+        {% for tag in post.tag_list %}<span class="pill">#{{ tag }}</span>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="wrap-tight center mt-4" style="margin-inline:auto">
+      <a href="{% url 'website:news_list' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> All news</a>
+    </div>
+  </div>
+</article>
+
+{% if related %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="section-head center"><h2>More like this</h2><div class="rule"></div></div>
+    <div class="grid grid-3">
+      {% for other in related %}
+        <a href="{{ other.get_absolute_url }}" class="card news-card" data-reveal>
+          <div class="card-media">
+            {% if other.cover_image %}<img src="{{ other.cover_image.url }}" alt="{{ other.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas fa-newspaper"></i></div>{% endif %}
+          </div>
+          <div class="card-body">
+            <div class="meta"><span>{{ other.published_at|date:"j F Y" }}</span></div>
+            <h3>{{ other.title }}</h3>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>People</h1><p>Every account in the system.</p></div>
+  {% if pending_count %}
+    <a href="{% url 'dashboard:verification_queue' %}" class="btn btn-sm">
+      <i class="fas fa-user-check"></i> {{ pending_count }} awaiting verification
+    </a>
+  {% endif %}
+</div>
+
+<form method="get" class="filter-bar">
+  <div class="field">
+    <label for="{{ form.q.id_for_label }}">Search</label>
+    {{ form.q }}
+  </div>
+  <div class="field">
+    <label for="{{ form.role.id_for_label }}">Role</label>
+    {{ form.role }}
+  </div>
+  <div class="field">
+    <label for="{{ form.status.id_for_label }}">Status</label>
+    {{ form.status }}
+  </div>
+  <button class="btn btn-sm"><i class="fas fa-magnifying-glass"></i> Search</button>
+  <a href="{% url 'dashboard:user_list' %}" class="btn btn-sm btn-quiet">Clear</a>
+</form>
+
+{% include 'accounts/partials/user_rows.html' %}
+{% endblock %}

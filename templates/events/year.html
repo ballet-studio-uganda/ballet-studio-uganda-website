@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'events:calendar' %}">Calendar</a><i class="fas fa-chevron-right"></i><span>{{ year }}</span>
+    </nav>
+    <span class="kicker">{{ total_events }} event{{ total_events|pluralize }} this year</span>
+    <h1>{{ year }} at a glance</h1>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="cal-head">
+      <div class="cal-nav">
+        <a href="{% url 'events:calendar_year' prev_year %}" aria-label="Previous year"><i class="fas fa-chevron-left"></i></a>
+        <a href="{% url 'events:calendar_year' next_year %}" aria-label="Next year"><i class="fas fa-chevron-right"></i></a>
+      </div>
+      <a href="{% url 'events:calendar' %}" class="btn btn-sm btn-outline">Month view</a>
+    </div>
+
+    <div class="year-grid">
+      {% for month in months %}
+        <div class="mini-cal" data-reveal>
+          <div class="row-between">
+            <h4><a href="{% url 'events:calendar_month' year month.number %}">{{ month.name }}</a></h4>
+            {% if month.events %}<span class="pill pill-pink">{{ month.events|length }}</span>{% endif %}
+          </div>
+
+          <div class="mini-grid" aria-hidden="true">
+            {% for name in "MTWTFSS"|make_list %}<span style="font-weight:700;color:var(--text-faint)">{{ name }}</span>{% endfor %}
+            {% for week in month.weeks %}
+              {% for day in week %}
+                {% if day %}
+                  <span class="{% if day in month.event_days %}has-event{% endif %}">{{ day }}</span>
+                {% else %}
+                  <span></span>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          </div>
+
+          {% if month.events %}
+            <ul class="stack mt-3" style="gap:.4rem">
+              {% for event in month.events|slice:":4" %}
+                <li style="font-size:.76rem">
+                  <a href="{{ event.get_absolute_url }}">
+                    <strong class="text-pink">{{ event.start_at|date:"j" }}</strong>
+                    {{ event.title|truncatechars:26 }}
+                  </a>
+                </li>
+              {% endfor %}
+              {% if month.events|length > 4 %}
+                <li style="font-size:.74rem;color:var(--text-faint)">+ {{ month.events|length|add:"-4" }} more</li>
+              {% endif %}
+            </ul>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'academics:report_list' %}">Reports</a><i class="fas fa-chevron-right"></i><span>{{ dance_class.name }}</span>
+    </nav>
+    <h1>{{ dance_class.name }}</h1>
+    <p>{{ period.name }} &middot; closes {{ period.closes_on|date:"j F Y" }}</p>
+  </div>
+  {% if can_publish %}
+    <form method="post" action="{% url 'academics:report_publish_class' dance_class.pk period.pk %}"
+          data-confirm="Publish every submitted report for this class to guardians?">
+      {% csrf_token %}
+      <button class="btn btn-sm"><i class="fas fa-paper-plane"></i> Publish all submitted</button>
+    </form>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <div class="panel-body flush">
+    <div class="table-wrap" style="border:none">
+      <table class="table">
+        <thead>
+          <tr><th>Dancer</th><th>Attendance</th><th class="num">Average</th><th>Report</th><th class="shrink"></th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>
+                <span class="row gap-sm">
+                  <span class="avatar avatar-sm">
+                    {% if row.student.photo %}<img src="{{ row.student.photo.url }}" alt="">{% else %}{{ row.student.initials }}{% endif %}
+                  </span>
+                  <span>
+                    <strong>{{ row.student.full_name }}</strong><br>
+                    <span class="text-faint" style="font-size:.74rem">age {{ row.student.age }}</span>
+                  </span>
+                </span>
+              </td>
+              <td>
+                {% if row.attendance.rate is not None %}
+                  <span class="pill {% if row.attendance.rate >= 85 %}pill-success{% elif row.attendance.rate >= 70 %}pill-warning{% else %}pill-danger{% endif %}">
+                    {{ row.attendance.rate }}%
+                  </span>
+                {% else %}<span class="text-faint">&mdash;</span>{% endif %}
+              </td>
+              <td class="num">{% if row.average %}<strong>{{ row.average|floatformat:0 }}%</strong>{% else %}&mdash;{% endif %}</td>
+              <td>
+                {% if row.report %}
+                  <span class="pill {% if row.status == 'published' %}pill-success{% elif row.status == 'submitted' %}pill-info{% else %}pill-warning{% endif %}">
+                    {{ row.report.get_status_display }}
+                  </span>
+                {% else %}
+                  <span class="pill">Not started</span>
+                {% endif %}
+              </td>
+              <td class="shrink">
+                <div class="row gap-sm">
+                  <a href="{% url 'academics:report_edit' dance_class.pk row.student.pk period.pk %}" class="btn btn-sm btn-outline">
+                    {% if row.report %}Edit{% else %}Write{% endif %}
+                  </a>
+                  {% if row.report and can_publish and row.status != 'published' %}
+                    <form method="post" action="{% url 'academics:report_publish' row.report.pk %}"
+                          data-confirm="Publish this report to {{ row.student.display_name }}'s family?">
+                      {% csrf_token %}
+                      <button class="btn btn-sm btn-success"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                  {% endif %}
+                  {% if row.report %}
+                    <a href="{% url 'academics:report_detail' row.report.pk %}" class="btn btn-sm btn-quiet"><i class="fas fa-eye"></i></a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5"><div class="empty" style="padding:2.5rem"><i class="fas fa-user-slash"></i><p>No dancers enrolled in this class.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

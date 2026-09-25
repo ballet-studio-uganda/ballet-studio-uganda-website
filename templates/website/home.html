@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block body_class %}has-hero{% endblock %}
+
+{% block content %}
+
+{# HERO — full-bleed video directly beneath the nav, animated text over it #}
+<section class="hero" aria-label="Welcome">
+  {% for slide in hero_slides %}
+    <article class="hero-slide {% if forloop.first %}is-active{% endif %}">
+
+      <div class="hero-media" aria-hidden="true">
+        {% if slide.has_video %}
+          <video autoplay muted loop playsinline preload="metadata"
+                 {% if slide.poster_image %}poster="{{ slide.poster_image.url }}"{% endif %}>
+            <source src="{{ slide.media_url }}" type="video/mp4">
+          </video>
+        {% elif slide.poster_image %}
+          <img src="{{ slide.poster_image.url }}" alt="">
+        {% endif %}
+      </div>
+      <div class="hero-veil" style="opacity:{{ slide.overlay_opacity|default:'0.45' }}"></div>
+
+      <div class="hero-content">
+        {% if slide.kicker %}<span class="hero-kicker">{{ slide.kicker }}</span>{% endif %}
+
+        <h1 class="hero-title">{{ slide.headline }}{% if slide.headline_accent %} <em class="accent">{{ slide.headline_accent }}</em>{% endif %}</h1>
+
+        {% if slide.subtext %}<p class="hero-sub">{{ slide.subtext }}</p>{% endif %}
+
+        <div class="hero-actions">
+          {% if slide.primary_cta_text %}
+            <a href="{{ slide.primary_cta_url|default:'/enrol/' }}" class="btn btn-lg">
+              {{ slide.primary_cta_text }} <i class="fas fa-arrow-right"></i>
+            </a>
+          {% endif %}
+          {% if slide.secondary_cta_text %}
+            <a href="{{ slide.secondary_cta_url|default:'/events/recital/' }}" class="btn btn-lg btn-ghost">
+              <i class="fas fa-play"></i> {{ slide.secondary_cta_text }}
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+    </article>
+  {% empty %}
+    {# No hero configured yet — a styled fallback rather than a blank screen. #}
+    <article class="hero-slide is-active">
+      <div class="hero-veil" style="opacity:.5"></div>
+      <div class="hero-content">
+        <span class="hero-kicker">Kampala · Since {{ studio.founded_year }}</span>
+        <h1 class="hero-title">Where discipline becomes <em class="accent">grace</em></h1>
+        <p class="hero-sub">
+          Classical ballet training for every dancer in Uganda — from a three-year-old’s
+          first plié to the stage of our annual December recital.
+        </p>
+        <div class="hero-actions">
+          <a href="{% url 'website:enrol' %}" class="btn btn-lg">Begin your journey <i class="fas fa-arrow-right"></i></a>
+          <a href="{% url 'events:recital' %}" class="btn btn-lg btn-ghost"><i class="fas fa-play"></i> The recital</a>
+        </div>
+        {% if user.is_staff or user.is_superuser %}
+          <p class="mt-3" style="color:rgba(255,255,255,.55);font-size:.82rem">
+            <i class="fas fa-circle-info"></i>
+            Add a hero video in the admin under <strong>Website → Hero slides</strong> to replace this.
+          </p>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+
+  <div class="hero-bottom">
+    <a href="#intro" class="scroll-cue">
+      <span class="line" aria-hidden="true"></span>
+      <span>Scroll</span>
+    </a>
+
+    {% if hero_slides|length > 1 %}
+      <div class="hero-dots" role="tablist" aria-label="Choose a hero slide">
+        {% for slide in hero_slides %}
+          <button type="button" class="{% if forloop.first %}is-active{% endif %}"
+                  aria-label="Slide {{ forloop.counter }}"></button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if hero_slides.0.has_video %}
+      <button type="button" class="hero-sound" aria-label="Unmute background video">
+        <i class="fas fa-volume-xmark"></i>
+      </button>
+    {% endif %}
+  </div>
+</section>
+
+{# ---------------------------------------------------------------- marquee #}
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    {% for i in "12" %}
+      <span>Resilience</span><span>Hope</span><span>Dreams</span>
+      <span>Ballet Dance Studio UG</span><span>Kampala</span><span>Est. {{ studio.founded_year }}</span>
+    {% endfor %}
+  </div>
+</div>
+
+{# ------------------------------------------------------------------ intro #}
+<section class="section" id="intro">
+  <div class="wrap">
+    <div class="split">
+      <div data-reveal="left">
+        <span class="kicker">Welcome to the studio</span>
+        <h2>A home for dancers, <span class="script text-pink" style="font-size:1.5em">not just dancing</span></h2>
+        <p class="lede mt-2">
+          {{ studio.about_short|default:"We train dancers in the classical tradition — turnout, port de bras, musicality and the quiet discipline that ballet asks for — in a studio where every child is known by name." }}
+        </p>
+        {% if studio.mission %}<p class="mt-2">{{ studio.mission }}</p>{% endif %}
+        <a href="{% url 'website:about' %}" class="link-arrow mt-3">
+          Our story <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="split-media" data-reveal="right">
+        {% if studio.og_image %}
+          <img src="{{ studio.og_image.url }}" alt="Dancers at Ballet Dance Studio UG">
+        {% else %}
+          <div class="media-placeholder"><i class="fas fa-camera"></i></div>
+        {% endif %}
+        <div class="badge-float">
+          <strong>{{ stats.years }}</strong>
+          <span>Years of training</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------------------ stats #}
+<section class="section-sm">
+  <div class="wrap">
+    <div class="stats" data-reveal>
+      <div class="stat">
+        <div class="stat-value"><span data-count="{{ stats.years }}">0</span>+</div>
+        <div class="stat-label">Years in Kampala</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value"><span data-count="{{ stats.dancers }}">0</span></div>
+        <div class="stat-label">Dancers trained</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value"><span data-count="{{ stats.programmes }}">0</span></div>
+        <div class="stat-label">Training programmes</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value"><span data-count="{{ stats.recitals }}">0</span></div>
+        <div class="stat-label">Annual recitals</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------------- programmes #}
+{% if programmes %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">Training</span>
+      <h2>Find your place at the barre</h2>
+      <div class="rule"></div>
+      <p>Every programme is built around where a dancer actually is — not where a syllabus says they ought to be.</p>
+    </div>
+
+    <div class="grid grid-3">
+      {% for programme in programmes %}
+        <a href="{{ programme.get_absolute_url }}" class="card programme-card" data-reveal>
+          <div class="card-media">
+            {% if programme.image %}
+              <img src="{{ programme.image.url }}" alt="{{ programme.name }}" loading="lazy">
+            {% else %}
+              <div class="media-placeholder"><i class="fas {{ programme.icon|default:'fa-shoe-prints' }}"></i></div>
+            {% endif %}
+            <span class="card-tag">{{ programme.age_range_display }}</span>
+          </div>
+          <div class="card-body">
+            <div class="accent-line" style="--accent:{{ programme.accent_colour }}"></div>
+            <h3>{{ programme.name }}</h3>
+            {% if programme.level_label %}<span class="pill pill-pink mb-2">{{ programme.level_label }}</span>{% endif %}
+            <p>{{ programme.tagline|default:programme.description|truncatewords:22 }}</p>
+            <span class="link-arrow">Explore <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+    <div class="center mt-4">
+      <a href="{% url 'website:programmes' %}" class="btn btn-outline">All programmes</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ---------------------------------------------------------------- recital #}
+{% if recital %}
+<section class="section">
+  <div class="wrap">
+    <div class="recital-feature" data-reveal="scale">
+      {% if recital.hero_image %}<img class="bg" src="{{ recital.hero_image.url }}" alt="" loading="lazy">{% endif %}
+      <div class="inner">
+        <span class="ribbon">
+          <i class="fas fa-ribbon"></i> {{ recital.year }} Annual Recital · Sickle cell awareness
+        </span>
+
+        <h2>{{ recital.title }}</h2>
+        {% if recital.theme %}<p class="tagline mt-1">{{ recital.theme }}</p>{% endif %}
+
+        <p class="mt-3">{{ recital.introduction|default:recital.description|truncatewords:48 }}</p>
+
+        {% if recital.is_upcoming %}
+          <div class="countdown" data-countdown="{{ recital.performance_date|date:'Y-m-d' }}T{{ recital.start_time|date:'H:i'|default:'18:00' }}:00">
+            <div class="countdown-unit"><strong data-unit="days">—</strong><span>Days</span></div>
+            <div class="countdown-unit"><strong data-unit="hours">—</strong><span>Hours</span></div>
+            <div class="countdown-unit"><strong data-unit="minutes">—</strong><span>Minutes</span></div>
+            <div class="countdown-unit"><strong data-unit="seconds">—</strong><span>Seconds</span></div>
+          </div>
+        {% endif %}
+
+        <div class="meta mb-3" style="color:rgba(255,255,255,.62)">
+          <span><i class="fas fa-calendar-day"></i> {{ recital.performance_date|date:"l, j F Y" }}</span>
+          {% if recital.venue_name %}<span><i class="fas fa-location-dot"></i> {{ recital.venue_name }}</span>{% endif %}
+          {% if recital.cast_size %}<span><i class="fas fa-users"></i> {{ recital.cast_size }} dancers</span>{% endif %}
+        </div>
+
+        <div class="row">
+          <a href="{{ recital.get_absolute_url }}" class="btn">The recital page <i class="fas fa-arrow-right"></i></a>
+          {% if recital.trailer_url %}
+            <a href="{{ recital.trailer_url }}" target="_blank" rel="noopener" class="btn btn-ghost">
+              <i class="fas fa-play"></i> Watch the trailer
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ----------------------------------------------------------- what's coming #}
+{% if upcoming_events %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="row-between mb-4" data-reveal>
+      <div>
+        <span class="kicker">The calendar</span>
+        <h2>What’s coming up</h2>
+      </div>
+      <a href="{% url 'events:calendar' %}" class="link-arrow">Full calendar <i class="fas fa-arrow-right"></i></a>
+    </div>
+
+    <div class="grid grid-4">
+      {% for event in upcoming_events %}
+        <a href="{{ event.get_absolute_url }}" class="card" data-reveal>
+          <div class="card-body">
+            <div class="row gap-sm mb-2">
+              <span class="pill" style="background:{{ event.category.colour|default:'#EE2A7B' }}1a;color:{{ event.category.colour|default:'#EE2A7B' }}">
+                {{ event.category.name|default:"Event" }}
+              </span>
+              {% if event.days_until <= 7 %}<span class="pill pill-warning">This week</span>{% endif %}
+            </div>
+            <h3 style="font-size:1.1rem">{{ event.title }}</h3>
+            <div class="meta mt-2">
+              <span><i class="fas fa-calendar"></i> {{ event.start_at|date:"j M" }}</span>
+              <span><i class="fas fa-clock"></i> {{ event.duration_display }}</span>
+            </div>
+            {% if event.venue_name %}
+              <p class="mt-2" style="font-size:.84rem">{{ event.venue_name }}</p>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ------------------------------------------------------------------- news #}
+{% if featured_news %}
+<section class="section">
+  <div class="wrap">
+    <div class="row-between mb-4" data-reveal>
+      <div>
+        <span class="kicker">From the studio</span>
+        <h2>News &amp; announcements</h2>
+      </div>
+      <a href="{% url 'website:news_list' %}" class="link-arrow">All news <i class="fas fa-arrow-right"></i></a>
+    </div>
+
+    <div class="grid grid-3">
+      {% for post in featured_news %}
+        <a href="{{ post.get_absolute_url }}" class="card news-card" data-reveal>
+          <div class="card-media">
+            {% if post.cover_image %}
+              <img src="{{ post.cover_image.url }}" alt="{{ post.title }}" loading="lazy">
+            {% else %}
+              <div class="media-placeholder"><i class="fas fa-newspaper"></i></div>
+            {% endif %}
+            {% if post.category %}<span class="card-tag">{{ post.category.name }}</span>{% endif %}
+          </div>
+          <div class="card-body">
+            <div class="meta">
+              <span>{{ post.published_at|date:"j F Y" }}</span>
+              <span class="dot-sep">{{ post.reading_minutes }} min read</span>
+            </div>
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.excerpt|default:post.body|striptags|truncatewords:20 }}</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ---------------------------------------------------------------- gallery #}
+{% if featured_albums %}
+<section class="section section-plum">
+  <div class="wrap">
+    <div class="row-between mb-4" data-reveal>
+      <div>
+        <span class="kicker">In pictures</span>
+        <h2>Moments from the studio</h2>
+      </div>
+      <a href="{% url 'website:gallery' %}" class="link-arrow">Browse the gallery <i class="fas fa-arrow-right"></i></a>
+    </div>
+
+    <div class="gallery-grid">
+      {% for album in featured_albums %}
+        <a href="{{ album.get_absolute_url }}" class="gallery-item" data-reveal>
+          {% if album.cover %}
+            <img src="{{ album.cover.url }}" alt="{{ album.title }}" loading="lazy">
+          {% else %}
+            <div class="media-placeholder"><i class="fas fa-images"></i></div>
+          {% endif %}
+          <figcaption>
+            <strong>{{ album.title }}</strong><br>
+            <span style="opacity:.7">{{ album.image_count }} photo{{ album.image_count|pluralize }}</span>
+          </figcaption>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ----------------------------------------------------------- testimonials #}
+{% if testimonials %}
+<section class="section">
+  <div class="wrap">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">In their words</span>
+      <h2>What our families say</h2>
+      <div class="rule"></div>
+    </div>
+
+    <div class="grid grid-3">
+      {% for quote in testimonials|slice:":3" %}
+        <div class="quote-card" data-reveal>
+          {% if quote.rating %}
+            <div class="stars mb-2">{% for _ in "12345"|make_list %}{% if forloop.counter <= quote.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+          {% endif %}
+          <blockquote>{{ quote.quote }}</blockquote>
+          <div class="quote-author">
+            <span class="avatar avatar-sm">
+              {% if quote.photo %}<img src="{{ quote.photo.url }}" alt="">{% else %}{{ quote.name|slice:":1" }}{% endif %}
+            </span>
+            <div>
+              <strong>{{ quote.name }}</strong>
+              <span>{{ quote.role }}</span>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ---------------------------------------------------------------- faculty #}
+{% if faculty %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">Who teaches you</span>
+      <h2>Our faculty</h2>
+      <div class="rule"></div>
+    </div>
+
+    <div class="grid grid-4">
+      {% for member in faculty %}
+        <div class="card card-flat person-card" data-reveal>
+          <div class="card-body">
+            <div class="card-media">
+              {% if member.user.photo %}
+                <img src="{{ member.user.photo.url }}" alt="{{ member.user.display_name }}" loading="lazy">
+              {% else %}
+                <div class="media-placeholder"><i class="fas fa-user"></i></div>
+              {% endif %}
+            </div>
+            <h3>{{ member.user.display_name }}</h3>
+            <span class="person-role">{{ member.job_title|default:"Ballet Teacher" }}</span>
+            {% if member.short_bio %}<p>{{ member.short_bio }}</p>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="center mt-4">
+      <a href="{% url 'website:faculty' %}" class="btn btn-outline">Meet the whole team</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# --------------------------------------------------------------- enrol CTA #}
+<section class="section section-plum">
+  <div class="wrap wrap-tight center" data-reveal>
+    <span class="kicker">Ready when you are</span>
+    <h2>Your first class is closer than you think</h2>
+    <p class="lede mt-2" style="color:rgba(255,255,255,.78);margin-inline:auto">
+      Tell us about your dancer and we will find the right class, arrange a trial,
+      and answer every question you have — no obligation.
+    </p>
+    <div class="row mt-4" style="justify-content:center">
+      {% if studio.enrolment_open %}
+        <a href="{% url 'website:enrol' %}" class="btn btn-lg">Enrol now <i class="fas fa-arrow-right"></i></a>
+      {% endif %}
+      <a href="{% url 'website:contact' %}" class="btn btn-lg btn-ghost">Ask us a question</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

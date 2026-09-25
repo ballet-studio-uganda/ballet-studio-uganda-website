@@ -1,0 +1,90 @@
+# Render blueprint for Ballet Dance Studio UG.
+#
+# Point Render at this repository (New → Blueprint) and it provisions the web
+# service and the database together. Everything marked `sync: false` is a
+# secret you fill in once, in the Render dashboard.
+#
+# See DEPLOY.md for the walkthrough.
+
+databases:
+  - name: bdsu-db
+    databaseName: bdsu
+    user: bdsu
+    plan: free            # free Postgres expires after 30 days -- see DEPLOY.md
+    region: frankfurt     # closest Render region to Uganda
+
+services:
+  - type: web
+    name: bdsu
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn ballet_dance_studio.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 --access-logfile - --error-logfile -"
+
+    healthCheckPath: /healthz
+
+    # Uploads must outlive a deploy. Without this disk the hero video, gallery
+    # photos and payment receipts are wiped on every push.
+    # NOTE: disks are a paid feature and they disable zero-downtime deploys.
+    # DEPLOY.md covers the free alternative (object storage).
+    disk:
+      name: bdsu-media
+      mountPath: /var/media
+      sizeGB: 1
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+
+      # Generated once by Render and kept for the life of the service.
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+      - key: DJANGO_DEBUG
+        value: "false"
+
+      # RENDER_EXTERNAL_HOSTNAME is injected automatically and trusted by
+      # settings.py, so this only needs your own domain once you add one.
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        sync: false
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bdsu-db
+          property: connectionString
+
+      # Matches the disk mount above.
+      - key: MEDIA_ROOT
+        value: /var/media
+
+      - key: SECURE_SSL_REDIRECT
+        value: "true"
+
+      # Email: leave unset and Django prints messages to the log instead of
+      # sending them. Password resets need these to work for real.
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "true"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: "Ballet Dance Studio UG <info@balletdancestudioug.com>"
+
+      # Set once, in the dashboard, to have the first deploy create the
+      # director's login. Remove them afterwards.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false

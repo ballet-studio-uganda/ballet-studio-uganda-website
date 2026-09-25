@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  {% if album.cover %}<img class="bg" src="{{ album.cover.url }}" alt="">{% endif %}
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'website:gallery' %}">Gallery</a><i class="fas fa-chevron-right"></i>
+      <span>{{ album.title }}</span>
+    </nav>
+    <h1>{{ album.title }}</h1>
+    {% if album.description %}<p class="lede">{{ album.description }}</p>{% endif %}
+    <div class="meta mt-3" style="color:rgba(255,255,255,.6)">
+      {% if album.date %}<span><i class="fas fa-calendar"></i> {{ album.date|date:"j F Y" }}</span>{% endif %}
+      <span><i class="fas fa-image"></i> {{ album.image_count }} photo{{ album.image_count|pluralize }}</span>
+      {% if album.photographer %}<span><i class="fas fa-camera"></i> {{ album.photographer }}</span>{% endif %}
+      {% if album.event %}<span><i class="fas fa-star"></i> <a href="{{ album.event.get_absolute_url }}" style="color:var(--pink-soft)">{{ album.event.title }}</a></span>{% endif %}
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="gallery-grid masonry">
+      {% for photo in images %}
+        <figure class="gallery-item"
+                data-lightbox="{{ photo.image.url }}"
+                data-caption="{{ photo.caption|default:album.title }}{% if photo.credit %} — {{ photo.credit }}{% endif %}"
+                data-alt="{{ photo.alt_text|default:photo.caption|default:album.title }}"
+                tabindex="0" role="button"
+                aria-label="View photo{% if photo.caption %}: {{ photo.caption }}{% endif %}">
+          <img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:photo.caption|default:album.title }}" loading="lazy">
+          {% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}
+        </figure>
+      {% empty %}
+        <div class="empty" style="grid-column:1/-1">
+          <i class="fas fa-camera"></i><h3>This album is empty</h3>
+          <p>Photos will appear here once they are uploaded.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if more %}
+<section class="section section-warm">
+  <div class="wrap">
+    <div class="section-head center"><h2>More albums</h2><div class="rule"></div></div>
+    <div class="grid grid-4">
+      {% for other in more %}
+        <a href="{{ other.get_absolute_url }}" class="card" data-reveal>
+          <div class="card-media">
+            {% if other.cover %}<img src="{{ other.cover.url }}" alt="{{ other.title }}" loading="lazy">
+            {% else %}<div class="media-placeholder"><i class="fas fa-images"></i></div>{% endif %}
+          </div>
+          <div class="card-body"><h3 style="font-size:1.05rem">{{ other.title }}</h3></div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

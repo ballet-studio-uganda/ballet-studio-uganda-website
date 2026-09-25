@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap wrap-tight">
+    <nav class="crumbs"><a href="{% url 'website:home' %}">Home</a><i class="fas fa-chevron-right"></i><span>{{ entry.title }}</span></nav>
+    <h1>{{ entry.title }}</h1>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="article">{{ entry.body|safe }}</div>
+    <p class="center mt-4 text-faint" style="font-size:.82rem">Last updated {{ entry.updated_at|date:"j F Y" }}</p>
+  </div>
+</section>
+{% endblock %}

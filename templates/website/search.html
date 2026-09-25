@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="wrap">
+    <h1>Search</h1>
+    <form method="get" class="row gap-sm mt-3" style="max-width:520px">
+      <label for="q" class="sr-only">Search the site</label>
+      <input type="search" name="q" id="q" class="form-input" value="{{ q }}" placeholder="Search the studio…" autofocus>
+      <button class="btn" type="submit"><i class="fas fa-magnifying-glass"></i></button>
+    </form>
+    {% if q %}<p class="lede mt-3">{{ total }} result{{ total|pluralize }} for &ldquo;{{ q }}&rdquo;</p>{% endif %}
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    {% if results.programmes %}
+      <h2 class="mb-3">Programmes</h2>
+      <div class="grid grid-3 mb-4">
+        {% for item in results.programmes %}
+          <a href="{{ item.get_absolute_url }}" class="card"><div class="card-body">
+            <h3 style="font-size:1.1rem">{{ item.name }}</h3>
+            <p class="mt-1">{{ item.tagline|default:item.description|truncatewords:16 }}</p>
+          </div></a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if results.news %}
+      <h2 class="mb-3">News</h2>
+      <div class="grid grid-3 mb-4">
+        {% for item in results.news %}
+          <a href="{{ item.get_absolute_url }}" class="card"><div class="card-body">
+            <div class="meta"><span>{{ item.published_at|date:"j M Y" }}</span></div>
+            <h3 style="font-size:1.1rem">{{ item.title }}</h3>
+          </div></a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if results.events %}
+      <h2 class="mb-3">Events</h2>
+      <div class="grid grid-3 mb-4">
+        {% for item in results.events %}
+          <a href="{{ item.get_absolute_url }}" class="card"><div class="card-body">
+            <div class="meta"><span><i class="fas fa-calendar"></i> {{ item.start_at|date:"j M Y" }}</span></div>
+            <h3 style="font-size:1.1rem">{{ item.title }}</h3>
+          </div></a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if results.albums %}
+      <h2 class="mb-3">Gallery</h2>
+      <div class="grid grid-4 mb-4">
+        {% for item in results.albums %}
+          <a href="{{ item.get_absolute_url }}" class="card">
+            <div class="card-media">
+              {% if item.cover %}<img src="{{ item.cover.url }}" alt="{{ item.title }}" loading="lazy">
+              {% else %}<div class="media-placeholder"><i class="fas fa-images"></i></div>{% endif %}
+            </div>
+            <div class="card-body"><h3 style="font-size:1rem">{{ item.title }}</h3></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if q and not total %}
+      <div class="empty">
+        <i class="fas fa-magnifying-glass"></i>
+        <h3>Nothing found</h3>
+        <p>We could not find anything matching &ldquo;{{ q }}&rdquo;. Try a different word, or
+          <a href="{% url 'website:contact' %}" class="text-pink">ask us directly</a>.</p>
+      </div>
+    {% elif not q %}
+      <div class="empty">
+        <i class="fas fa-keyboard"></i>
+        <h3>What are you looking for?</h3>
+        <p>Search programmes, news, events and photo albums.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

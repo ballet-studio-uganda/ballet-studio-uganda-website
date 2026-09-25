@@ -1,0 +1,96 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Attendance</h1><p>Since {{ since|date:"j F Y" }}</p></div>
+  <div class="period-bar" style="margin:0">
+    <a href="?days=30" class="{% if days == 30 %}active{% endif %}">30 days</a>
+    <a href="?days=60" class="{% if days == 60 %}active{% endif %}">60 days</a>
+    <a href="?days=90" class="{% if days == 90 %}active{% endif %}">90 days</a>
+    <a href="?days=365" class="{% if days == 365 %}active{% endif %}">This year</a>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi {% if overall.rate >= 85 %}kpi-green{% elif overall.rate >= 70 %}kpi-gold{% else %}kpi-red{% endif %}">
+    <div class="kpi-label"><i class="fas fa-user-check"></i> Overall attendance</div>
+    <div class="kpi-value">{% if overall.rate is not None %}{{ overall.rate }}<small>%</small>{% else %}&mdash;{% endif %}</div>
+    <div class="kpi-note"><span>{{ overall.attended }} of {{ overall.total }} marks</span></div>
+  </div>
+  <div class="kpi kpi-green">
+    <div class="kpi-label"><i class="fas fa-check"></i> Present</div>
+    <div class="kpi-value">{{ overall.present }}</div>
+  </div>
+  <div class="kpi kpi-gold">
+    <div class="kpi-label"><i class="fas fa-clock"></i> Late</div>
+    <div class="kpi-value">{{ overall.late }}</div>
+  </div>
+  <div class="kpi kpi-red">
+    <div class="kpi-label"><i class="fas fa-xmark"></i> Absent</div>
+    <div class="kpi-value">{{ overall.absent }}</div>
+    <div class="kpi-note"><span>{{ overall.excused }} excused</span></div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>By class</h3></div>
+    <div class="panel-body flush">
+      <div class="table-wrap" style="border:none">
+        <table class="table">
+          <thead><tr><th>Class</th><th class="num">Marks</th><th class="num">Attended</th><th>Rate</th></tr></thead>
+          <tbody>
+            {% for row in by_class %}
+              <tr onclick="window.location='{% url 'academics:class_detail' row.dance_class.pk %}'" style="cursor:pointer">
+                <td>
+                  <strong>{{ row.dance_class.name }}</strong><br>
+                  <span class="text-faint" style="font-size:.74rem">{{ row.dance_class.program.name }}</span>
+                </td>
+                <td class="num">{{ row.total }}</td>
+                <td class="num">{{ row.attended }}</td>
+                <td style="min-width:140px">
+                  <div class="row gap-sm">
+                    <div class="bar {% if row.rate < 70 %}bar-danger{% elif row.rate < 85 %}bar-warning{% else %}bar-success{% endif %}" style="flex:1">
+                      <span style="width:{{ row.rate }}%"></span>
+                    </div>
+                    <strong style="font-size:.8rem;min-width:44px;text-align:right">{{ row.rate }}%</strong>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="padding:2rem"><i class="fas fa-clipboard"></i><p>No registers taken in this period.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Dancers to check on</h3>
+      <span class="pill pill-warning">{{ concerns|length }}</span>
+    </div>
+    <div class="panel-body flush">
+      {% for row in concerns %}
+        <a href="{% url 'academics:student_detail' row.student.pk %}" class="register-row" style="grid-template-columns:1fr auto">
+          <div class="register-who">
+            <span class="avatar avatar-sm">{{ row.student.initials }}</span>
+            <div>
+              <strong>{{ row.student.full_name }}</strong>
+              <span>{{ row.attended }} of {{ row.total }} &middot; {{ row.absent }} absence{{ row.absent|pluralize }}</span>
+            </div>
+          </div>
+          <span class="pill {% if row.rate < 50 %}pill-danger{% else %}pill-warning{% endif %}">{{ row.rate }}%</span>
+        </a>
+      {% empty %}
+        <div class="empty" style="padding:3rem 1rem">
+          <i class="fas fa-circle-check"></i>
+          <h3>Nobody is falling behind</h3>
+          <p>Every dancer is above 70% attendance.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

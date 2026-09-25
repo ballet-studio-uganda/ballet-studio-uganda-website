@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Page not found · {{ studio.short_name }}{% endblock %}
+
+{% block content %}
+<section class="section" style="min-height:72svh;display:grid;place-items:center">
+  <div class="wrap wrap-tight center">
+    <span class="script text-pink" style="font-size:7rem;line-height:1">404</span>
+    <h1 class="mt-2">This step is not in the choreography</h1>
+    <p class="lede mt-2" style="margin-inline:auto">
+      The page you were looking for has moved or never existed. Let us get you back on stage.
+    </p>
+    <div class="row mt-4" style="justify-content:center">
+      <a href="{% url 'website:home' %}" class="btn">Back to the home page</a>
+      <a href="{% url 'website:search' %}" class="btn btn-outline">Search the site</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

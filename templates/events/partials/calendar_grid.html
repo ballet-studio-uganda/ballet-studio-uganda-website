@@ -1,0 +1,18 @@
+<div class="calendar" role="grid" aria-label="{{ month_name }} {{ year }}">
+  {% for name in weekday_names %}<div class="cal-dow" role="columnheader">{{ name }}</div>{% endfor %}
+
+  {% for week in weeks %}
+    {% for cell in week %}
+      <div class="cal-cell{% if not cell.day %} is-empty{% endif %}{% if cell.is_today %} is-today{% endif %}" role="gridcell">
+        {% if cell.day %}
+          <span class="cal-date">{{ cell.day }}</span>
+          {% for event in cell.events %}
+            <a href="{{ event.get_absolute_url }}" class="cal-event"
+               style="--accent:{{ event.category.colour|default:'#EE2A7B' }};background:{{ event.category.colour|default:'#EE2A7B' }}"
+               title="{{ event.title }} — {{ event.duration_display }}">{{ event.title }}</a>
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endfor %}
+</div>

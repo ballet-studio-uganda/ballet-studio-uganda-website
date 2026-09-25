@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth">
+  <aside class="auth-art">
+    {% if studio.og_image %}<img class="bg" src="{{ studio.og_image.url }}" alt="">{% endif %}
+    <div>
+      <span class="brand-name" style="font-size:3.2rem;color:#fff">Ballet</span>
+      <div class="brand-sub" style="font-size:.6rem">Dance Studio UG</div>
+      <h2 class="mt-4">Welcome back</h2>
+      <p>Attendance, progress reports, fee statements and the studio calendar &mdash;
+         all in one place.</p>
+      <p class="tagline mt-4">{{ studio.tagline }}</p>
+    </div>
+  </aside>
+
+  <div class="auth-panel">
+    <div class="auth-form">
+      <a href="{% url 'website:home' %}" class="link-arrow mb-3" style="color:var(--text-faint)">
+        <i class="fas fa-arrow-left"></i> Back to the site
+      </a>
+      <h1 style="font-size:2rem">Sign in</h1>
+      <p class="text-soft mb-4">Use the email or username the studio has on file.</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'includes/form.html' %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn btn-block btn-lg">Sign in</button>
+      </form>
+
+      <div class="row-between mt-3">
+        <a href="{% url 'accounts:password_reset' %}" class="btn-quiet">Forgot your password?</a>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:2rem 0">
+      <p class="center text-soft">
+        No account yet? <a href="{% url 'accounts:signup' %}" class="text-pink" style="font-weight:600">Create one</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

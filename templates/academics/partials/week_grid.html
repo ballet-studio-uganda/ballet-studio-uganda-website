@@ -1,0 +1,25 @@
+{% comment %}Monday-to-Sunday timetable grid. Needs: week (dict date -> sessions), today.{% endcomment %}
+<div class="timetable">
+  {% for day, sessions in week.items %}
+    <div class="tt-day-head {% if day == today %}is-today{% endif %}">
+      <strong>{{ day|date:"D" }}</strong>
+      <span>{{ day|date:"j M" }}</span>
+    </div>
+  {% endfor %}
+
+  {% for day, sessions in week.items %}
+    <div class="tt-col">
+      {% for session in sessions %}
+        <a href="{% url 'academics:register' session.pk %}" class="tt-slot {% if session.register_taken %}is-done{% endif %}"
+           style="--accent:{{ session.dance_class.program.accent_colour }}">
+          <strong>{{ session.start_time|time:"H:i" }} {{ session.dance_class.name|truncatechars:22 }}</strong>
+          <span>{% if session.studio %}{{ session.studio.name }}{% endif %}
+                {% if session.teacher %}&middot; {{ session.teacher.user.first_name }}{% endif %}</span>
+          {% if session.register_taken %}<span class="text-faint"><i class="fas fa-check"></i> register taken</span>{% endif %}
+        </a>
+      {% empty %}
+        <span class="text-faint" style="font-size:.74rem;padding:.4rem">&mdash;</span>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>

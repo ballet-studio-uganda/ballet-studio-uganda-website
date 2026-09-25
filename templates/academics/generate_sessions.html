@@ -1,0 +1,45 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div>
+    <nav class="crumbs" style="color:var(--text-faint)">
+      <a href="{% url 'academics:class_list' %}">Classes</a><i class="fas fa-chevron-right"></i>
+      <a href="{% url 'academics:class_detail' dance_class.pk %}">{{ dance_class.name }}</a>
+    </nav>
+    <h1>Generate sessions</h1>
+    <p>Build the term timetable for {{ dance_class.name }}.</p>
+  </div>
+</div>
+
+<div style="max-width:640px">
+  <div class="alert">
+    <i class="fas fa-circle-info"></i>
+    <div>
+      This creates one session for every timetable slot between the dates below.
+      It is safe to run more than once &mdash; existing sessions are left alone.
+      <br><strong>Current timetable:</strong> {{ dance_class.schedule_display }}
+    </div>
+  </div>
+
+  <form method="post" novalidate class="mt-3">
+    {% csrf_token %}
+    <fieldset class="fieldset">
+      <div class="form-grid">
+        {% include 'includes/field.html' with field=form.start_date %}
+        {% include 'includes/field.html' with field=form.end_date %}
+      </div>
+      {% include 'includes/field.html' with field=form.holidays %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i>
+          <div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>
+      {% endif %}
+    </fieldset>
+
+    <div class="row">
+      <button type="submit" class="btn btn-lg"><i class="fas fa-calendar-plus"></i> Generate</button>
+      <a href="{% url 'academics:class_detail' dance_class.pk %}" class="btn btn-lg btn-quiet">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

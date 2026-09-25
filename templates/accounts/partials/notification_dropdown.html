@@ -1,0 +1,34 @@
+<div class="head">
+  <h4>Notifications</h4>
+  {% if items %}
+    <form method="post" action="{% url 'accounts:notifications_read_all' %}"
+          hx-post="{% url 'accounts:notifications_read_all' %}" hx-target="#notif-panel" hx-swap="innerHTML">
+      {% csrf_token %}
+      <button type="submit" class="btn-quiet" style="font-size:.75rem">Mark all read</button>
+    </form>
+  {% endif %}
+</div>
+
+{% for note in items %}
+  <a class="note-item {% if not note.is_read %}unread{% endif %} level-{{ note.level }}"
+     href="{{ note.url|default:'#' }}"
+     hx-post="{% url 'accounts:notification_read' note.pk %}" hx-swap="none">
+    <span class="ico"><i class="fas {{ note.icon|default:'fa-bell' }}"></i></span>
+    <span style="min-width:0">
+      <strong>{{ note.title }}</strong>
+      {% if note.message %}<p>{{ note.message|truncatewords:16 }}</p>{% endif %}
+      <time>{{ note.created_at|timesince }} ago</time>
+    </span>
+  </a>
+{% empty %}
+  <div class="empty" style="padding:2.5rem 1rem">
+    <i class="fas fa-bell-slash"></i>
+    <p>Nothing new right now.</p>
+  </div>
+{% endfor %}
+
+{% if items %}
+  <a class="note-item" href="{% url 'accounts:notification_list' %}" style="justify-content:center;color:var(--pink);font-weight:600">
+    See all notifications
+  </a>
+{% endif %}

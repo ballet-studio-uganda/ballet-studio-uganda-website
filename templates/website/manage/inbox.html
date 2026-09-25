@@ -1,0 +1,38 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="dash-head">
+  <div><h1>Website inbox</h1><p>{{ unread }} unread message{{ unread|pluralize }}.</p></div>
+  <div class="row gap-sm">
+    <a href="{% url 'website:inbox' %}" class="btn btn-sm {% if request.GET.filter != 'unread' %}btn-outline{% else %}btn-quiet{% endif %}">All</a>
+    <a href="?filter=unread" class="btn btn-sm {% if request.GET.filter == 'unread' %}btn-outline{% else %}btn-quiet{% endif %}">Unread</a>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-body flush">
+    {% for message in page_obj %}
+      <a href="{% url 'website:inbox_detail' message.pk %}" class="note-item {% if not message.is_read %}unread{% endif %}">
+        <span class="ico"><i class="fas fa-envelope"></i></span>
+        <span style="min-width:0;flex:1">
+          <strong>{{ message.subject|default:message.get_topic_display }}</strong>
+          <p>{{ message.name }} &middot; {{ message.email }}{% if message.phone %} &middot; {{ message.phone }}{% endif %}</p>
+          <p class="text-faint">{{ message.message|truncatewords:24 }}</p>
+          <time>{{ message.created_at|date:"j M Y, H:i" }}</time>
+        </span>
+        <span class="row gap-sm">
+          <span class="pill">{{ message.get_topic_display }}</span>
+          {% if not message.is_read %}<span class="pill pill-pink">New</span>{% endif %}
+        </span>
+      </a>
+    {% empty %}
+      <div class="empty" style="padding:4rem">
+        <i class="fas fa-inbox"></i><h3>Nothing in the inbox</h3>
+        <p>Messages sent through the website contact form land here.</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

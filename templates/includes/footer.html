@@ -1,0 +1,96 @@
+{% load static %}
+<footer class="footer">
+  <div class="wrap">
+
+    <div class="footer-grid">
+      <div class="footer-brand">
+        {% if studio.logo_light %}
+          <img src="{{ studio.logo_light.url }}" alt="{{ studio.studio_name }}" style="height:56px">
+        {% else %}
+          <span class="brand-name">Ballet</span>
+          <div class="brand-sub" style="margin-top:.25rem">Dance Studio UG</div>
+        {% endif %}
+
+        <p class="tagline mt-2">{{ studio.tagline|default:"Resilience. Hope. Dreams." }}</p>
+
+        <p>{{ studio.about_short|default:"Nurturing the art of ballet in Uganda with excellence, discipline and joy — and dancing every December for sickle cell awareness." }}</p>
+
+        <div class="socials">
+          {% for icon, url in studio.social_links %}
+            <a href="{{ url }}" target="_blank" rel="noopener noreferrer" aria-label="Follow us"><i class="{{ icon }}"></i></a>
+          {% empty %}
+            <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="{% url 'website:about' %}">About the studio</a></li>
+          <li><a href="{% url 'website:programmes' %}">Training programmes</a></li>
+          <li><a href="{% url 'website:faculty' %}">Our faculty</a></li>
+          <li><a href="{% url 'website:gallery' %}">Gallery</a></li>
+          <li><a href="{% url 'website:news_list' %}">News</a></li>
+          <li><a href="{% url 'events:calendar' %}">Calendar</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Get involved</h4>
+        <ul>
+          <li><a href="{% url 'website:enrol' %}">Enrol a dancer</a></li>
+          <li><a href="{% url 'events:recital' %}">The annual recital</a></li>
+          <li><a href="{% url 'website:faqs' %}">Frequently asked questions</a></li>
+          <li><a href="{% url 'website:contact' %}">Contact us</a></li>
+          <li><a href="{% url 'accounts:login' %}">Parent &amp; student login</a></li>
+          <li><a href="{% url 'accounts:signup' %}">Create an account</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Find us</h4>
+        <ul class="contact-list">
+          {% if studio.phone %}<li><i class="fas fa-phone"></i> <a href="tel:{{ studio.phone }}">{{ studio.phone }}</a></li>{% endif %}
+          {% if studio.whatsapp %}<li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/{{ studio.whatsapp|cut:'+'|cut:' ' }}">{{ studio.whatsapp }}</a></li>{% endif %}
+          {% if studio.email %}<li><i class="fas fa-envelope"></i> <a href="mailto:{{ studio.email }}">{{ studio.email }}</a></li>{% endif %}
+          <li><i class="fas fa-location-dot"></i> {{ studio.address|default:"Kampala, Uganda" }}</li>
+          {% for line in studio.opening_hours_list %}
+            <li><i class="fas fa-clock"></i> {{ line }}</li>
+          {% empty %}
+            <li><i class="fas fa-clock"></i> Mon–Sat, 8:00–20:00</li>
+          {% endfor %}
+        </ul>
+
+        <h4 class="mt-4">Studio news by email</h4>
+        <form class="newsletter-form"
+              hx-post="{% url 'website:newsletter' %}"
+              hx-target="this"
+              hx-swap="outerHTML">
+          {% csrf_token %}
+          <label for="footer-email" class="sr-only">Email address</label>
+          <input type="email" name="email" id="footer-email" class="form-input"
+                 placeholder="your@email.com" required>
+          <button type="submit" class="btn btn-sm" aria-label="Subscribe">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; {% now "Y" %} {{ studio.studio_name }}. All rights reserved.</p>
+      <nav aria-label="Legal">
+        {% for page in footer_pages %}
+          <a href="{{ page.get_absolute_url }}">{{ page.title }}</a>
+        {% empty %}
+          <a href="{% url 'website:contact' %}">Contact</a>
+        {% endfor %}
+        <a href="{% url 'website:search' %}">Search</a>
+      </nav>
+    </div>
+
+  </div>
+</footer>
