@@ -116,6 +116,26 @@ ASGI_APPLICATION = 'ballet_dance_studio.asgi.application'
 # ---------------------------------------------------------------------------
 # Database  --  SQLite for local dev, DATABASE_URL (Postgres) in production
 # ---------------------------------------------------------------------------
+#
+# Refuse to start in production without DATABASE_URL rather than quietly
+# falling back to SQLite. On a host with an ephemeral filesystem that fallback
+# is a trap: the app comes up, the health check passes, and then every page
+# fails with "no such table" because the file was never migrated -- or worse,
+# it works for a day and the data disappears on the next deploy.
+if not DEBUG and not env('DATABASE_URL'):
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        'DATABASE_URL is not set, and SQLite is not safe to run in '
+        'production: the filesystem is wiped on every deploy.\n\n'
+        'On Render, create a PostgreSQL instance and add DATABASE_URL to the '
+        'web service (Environment -> Add from database). Creating the service '
+        'from render.yaml (New -> Blueprint) wires this automatically, along '
+        'with the build command, the media disk and the health check.\n\n'
+        'To run with SQLite deliberately, set DJANGO_DEBUG=true -- but never '
+        'do that on a public deployment.'
+    )
+
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),

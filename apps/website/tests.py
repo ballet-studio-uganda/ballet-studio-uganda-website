@@ -279,3 +279,49 @@ class SeedCommandTests(TestCase):
         self.assertGreater(FeeCategory.objects.count(), 0)
         self.assertGreater(ExpenseCategory.objects.count(), 0)
         self.assertTrue(HeroSlide.objects.filter(is_active=True).exists())
+
+
+class HealthCheckTests(TestCase):
+    """
+    The endpoint Render polls to decide whether a deploy is healthy.
+
+    It has to be stricter than "the process is running", because a build that
+    skipped `migrate` produces a process that starts fine and then fails every
+    real request.
+    """
+
+    def test_healthy_deployment_reports_ok(self):
+        response = self.client.get('/healthz')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b'ok')
+
+    def test_it_is_reachable_without_signing_in(self):
+        # Render's prober carries no session.
+        self.assertEqual(self.client.get('/healthz').status_code, 200)
+
+    def test_unapplied_migrations_fail_the_check(self):
+        from unittest.mock import patch
+        from apps.website import views
+
+        views._SCHEMA_VERIFIED = False           # undo any earlier caching
+        fake = [(type('M', (), {'app_label': 'finance', 'name': '0002_x'})(), False)]
+
+        with patch('django.db.migrations.executor.MigrationExecutor.migration_plan',
+                   return_value=fake):
+            response = self.client.get('/healthz')
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn(b'unapplied migration', response.content)
+        self.assertIn(b'finance.0002_x', response.content)
+
+        views._SCHEMA_VERIFIED = False           # leave it as we found it
+
+    def test_the_result_is_cached_after_it_passes(self):
+        from apps.website import views
+
+        views._SCHEMA_VERIFIED = False
+        self.assertEqual(self.client.get('/healthz').status_code, 200)
+        self.assertTrue(
+            views._SCHEMA_VERIFIED,
+            'the migration check should not re-run on every ping',
+        )

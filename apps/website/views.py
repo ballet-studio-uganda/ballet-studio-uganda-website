@@ -362,20 +362,58 @@ def search(request):
     })
 
 
+#: Once the schema is up to date it stays that way for the life of the
+#: process, so the migration check only has to pay for itself once.
+_SCHEMA_VERIFIED = False
+
+
 def healthz(request):
     """
-    Render pings this to decide whether the deploy came up.
+    Render pings this to decide whether a deploy came up healthy.
 
-    It touches the database on purpose: a web process that cannot reach
-    Postgres is not healthy, however cheerfully it returns 200.
+    It checks two things, because a web process can be running and still be
+    useless:
+
+    * the database answers at all;
+    * every migration has actually been applied.
+
+    The second matters more than it looks. A build that skipped `migrate`
+    leaves a process that starts cleanly, answers `SELECT 1` happily, and then
+    500s on every page with "no such table". Failing the health check instead
+    turns that into a failed deploy, which is a far easier thing to notice.
     """
+    global _SCHEMA_VERIFIED
+
     from django.db import connection
+
     try:
         with connection.cursor() as cursor:
             cursor.execute('SELECT 1')
     except Exception as exc:                       # pragma: no cover
         return HttpResponse(f'database unavailable: {exc}', status=503,
                             content_type='text/plain')
+
+    if not _SCHEMA_VERIFIED:
+        from django.db.migrations.executor import MigrationExecutor
+        try:
+            executor = MigrationExecutor(connection)
+            pending = executor.migration_plan(
+                executor.loader.graph.leaf_nodes()
+            )
+        except Exception as exc:                   # pragma: no cover
+            return HttpResponse(f'cannot read migration state: {exc}',
+                                status=503, content_type='text/plain')
+
+        if pending:
+            names = ', '.join(f'{m.app_label}.{m.name}' for m, _ in pending[:5])
+            return HttpResponse(
+                f'{len(pending)} unapplied migration(s): {names}. '
+                'Run `python manage.py migrate` -- the build command should be '
+                './build.sh, which does this on every deploy.',
+                status=503, content_type='text/plain',
+            )
+        _SCHEMA_VERIFIED = True
+
     return HttpResponse('ok', content_type='text/plain')
 
 

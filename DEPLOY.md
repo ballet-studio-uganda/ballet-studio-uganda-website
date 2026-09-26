@@ -237,6 +237,18 @@ that is why the optional `@font-face` declarations live in
 Render's default `gunicorn app:app` because it was not created from the
 blueprint. See section 2b.
 
+**`no such table: ...`, and the traceback mentions `sqlite3`.** `DATABASE_URL`
+is not set, so Django fell back to SQLite, and nothing migrated it. Create the
+PostgreSQL instance and add `DATABASE_URL` to the web service (Environment →
+*Add from database*). Since this is the single most expensive thing to get
+wrong, the app now refuses to start in production without it rather than
+falling back silently — if you see `ImproperlyConfigured: DATABASE_URL is not
+set`, that is this guard doing its job.
+
+**The deploy is marked unhealthy and `/healthz` returns 503 about unapplied
+migrations.** The build command is not `./build.sh`, so `migrate` never ran.
+See section 2b.
+
 **`DisallowedHost`.** `DJANGO_ALLOWED_HOSTS` does not include the domain you
 opened. Add it, including the `www.` variant if you use one.
 
