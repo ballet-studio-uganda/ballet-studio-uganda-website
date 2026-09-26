@@ -365,6 +365,7 @@ def search(request):
 #: Once the schema is up to date it stays that way for the life of the
 #: process, so the migration check only has to pay for itself once.
 _SCHEMA_VERIFIED = False
+_STATIC_VERIFIED = False
 
 
 def healthz(request):
@@ -382,7 +383,7 @@ def healthz(request):
     500s on every page with "no such table". Failing the health check instead
     turns that into a failed deploy, which is a far easier thing to notice.
     """
-    global _SCHEMA_VERIFIED
+    global _SCHEMA_VERIFIED, _STATIC_VERIFIED
 
     from django.db import connection
 
@@ -414,7 +415,46 @@ def healthz(request):
             )
         _SCHEMA_VERIFIED = True
 
+    if not _STATIC_VERIFIED:
+        problem = _check_static_files()
+        if problem:
+            return HttpResponse(problem, status=503, content_type='text/plain')
+
     return HttpResponse('ok', content_type='text/plain')
+
+
+def _check_static_files():
+    """
+    Confirm collectstatic has run, when the storage backend needs it.
+
+    With manifest storage every template that resolves a static URL raises if
+    the manifest is missing, so a build that skipped collectstatic serves a 500
+    on every single page -- including, unhelpfully, the error page. Catching it
+    here means the deploy is marked unhealthy instead.
+
+    Returns a message describing the problem, or None when all is well.
+    """
+    global _STATIC_VERIFIED
+
+    from django.contrib.staticfiles.storage import staticfiles_storage
+
+    # Only manifest-backed storage can be in this broken state; the plain
+    # backend used in development resolves paths without a manifest.
+    if not hasattr(staticfiles_storage, 'stored_name'):
+        _STATIC_VERIFIED = True
+        return None
+
+    try:
+        staticfiles_storage.url('css/brand.css')
+    except Exception as exc:
+        return (
+            f'static files are not collected: {exc} '
+            'Run `python manage.py collectstatic --no-input` -- the build '
+            'command should be ./build.sh, which does this on every deploy.'
+        )
+
+    _STATIC_VERIFIED = True
+    return None
 
 
 def robots_txt(request):

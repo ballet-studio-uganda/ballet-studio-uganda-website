@@ -325,3 +325,39 @@ class HealthCheckTests(TestCase):
             views._SCHEMA_VERIFIED,
             'the migration check should not re-run on every ping',
         )
+
+    def test_uncollected_static_files_fail_the_check(self):
+        """
+        A build that skipped collectstatic 500s on every page, including the
+        error page, because manifest storage raises while rendering the
+        template. The health check has to catch it.
+        """
+        from unittest.mock import patch
+        from apps.website import views
+
+        views._STATIC_VERIFIED = False
+
+        class FakeManifestStorage:
+            def stored_name(self, name):            # marks it manifest-backed
+                raise NotImplementedError
+
+            def url(self, name):
+                raise ValueError(f"The file '{name}' could not be found.")
+
+        with patch('django.contrib.staticfiles.storage.staticfiles_storage',
+                   FakeManifestStorage()):
+            message = views._check_static_files()
+
+        self.assertIsNotNone(message)
+        self.assertIn('static files are not collected', message)
+        self.assertIn('collectstatic', message)
+
+        views._STATIC_VERIFIED = False
+
+    def test_plain_storage_skips_the_static_check(self):
+        """Development uses non-manifest storage, which needs no collectstatic."""
+        from apps.website import views
+
+        views._STATIC_VERIFIED = False
+        self.assertIsNone(views._check_static_files())
+        self.assertTrue(views._STATIC_VERIFIED)

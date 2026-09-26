@@ -249,6 +249,12 @@ set`, that is this guard doing its job.
 migrations.** The build command is not `./build.sh`, so `migrate` never ran.
 See section 2b.
 
+**`ValueError: The file 'css/brand.css' could not be found`.** `collectstatic`
+has not run, so there is no manifest to resolve hashed filenames from. Every
+page 500s, including the error page. Run
+`python manage.py collectstatic --no-input`, and set the build command to
+`./build.sh` so it happens on every deploy. `/healthz` reports this too.
+
 **`DisallowedHost`.** `DJANGO_ALLOWED_HOSTS` does not include the domain you
 opened. Add it, including the `www.` variant if you use one.
 
