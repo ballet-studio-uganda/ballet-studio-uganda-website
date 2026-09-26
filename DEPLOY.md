@@ -40,6 +40,43 @@ director account if you set the variables in the next step.
 
 ---
 
+## 2b. If you created the service by hand instead
+
+Creating it as **New → Web Service** rather than **New → Blueprint** means Render
+never reads `render.yaml`. It guesses instead, and its guess for Python is
+`gunicorn app:app`, which fails immediately:
+
+```
+==> Running 'gunicorn app:app'
+ModuleNotFoundError: No module named 'app'
+```
+
+`app:app` is a Flask convention. This project's WSGI entry point is
+`ballet_dance_studio.wsgi:application`.
+
+**The clean fix** is to delete the service and recreate it with
+**New → Blueprint**. That is not a defeat — the blueprint also creates the
+database, attaches the media disk, sets the health check and wires a dozen
+environment variables, all of which you would otherwise re-enter by hand.
+
+**To repair it in place instead**, set these under **Settings**:
+
+| Setting | Value |
+|---|---|
+| Build Command | `./build.sh` |
+| Start Command | `gunicorn ballet_dance_studio.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60` |
+| Health Check Path | `/healthz` |
+
+then add the environment variables from section 3, create a PostgreSQL
+instance and set `DATABASE_URL` from it, and attach a disk at `/var/media`
+with `MEDIA_ROOT=/var/media`. At that point you have rebuilt `render.yaml` by
+hand, which is why recreating from the blueprint is usually quicker.
+
+A `.python-version` file pins Python to 3.14.3 either way, so that part is
+handled whichever route you take.
+
+---
+
 ## 3. Fill in the environment variables
 
 `render.yaml` generates `DJANGO_SECRET_KEY` and wires `DATABASE_URL` for you.
@@ -195,6 +232,10 @@ python manage.py changepassword director
 CSS or JS. Note that Django reads `url()` references inside CSS *comments* too —
 that is why the optional `@font-face` declarations live in
 `static/fonts/README.md` rather than commented out in `brand.css`.
+
+**`ModuleNotFoundError: No module named 'app'`.** The service is running
+Render's default `gunicorn app:app` because it was not created from the
+blueprint. See section 2b.
 
 **`DisallowedHost`.** `DJANGO_ALLOWED_HOSTS` does not include the domain you
 opened. Add it, including the `www.` variant if you use one.
