@@ -399,3 +399,59 @@ class HeroKickerTests(TestCase):
         response = self.client.get(reverse('website:home'))
         self.assertContains(response, 'home of ballet')
         self.assertNotContains(response, 'Since 2021')
+
+
+class TemplateHygieneTests(TestCase):
+    """
+    Guards against mistakes the template engine does not report.
+
+    Django templates fail quietly: a malformed comment is not an error, it is
+    just text on the page. These checks make that loud.
+    """
+
+    def template_files(self):
+        import pathlib
+        from django.conf import settings
+        root = pathlib.Path(settings.BASE_DIR) / 'templates'
+        return sorted(root.rglob('*.html'))
+
+    def test_no_multiline_comments(self):
+        """
+        `{# ... #}` is single-line only.
+
+        Spread one over two lines and Django does not complain -- it renders
+        the whole thing to the visitor as body text. Use `{% comment %}` for
+        anything that needs to wrap.
+        """
+        offenders = []
+        for path in self.template_files():
+            for number, line in enumerate(
+                path.read_text(encoding='utf-8').splitlines(), start=1
+            ):
+                if '{#' in line and '#}' not in line.split('{#', 1)[1]:
+                    offenders.append(f'{path.name}:{number}  {line.strip()[:60]}')
+
+        self.assertEqual(
+            offenders, [],
+            'Multi-line {# #} comments render as visible text. Put them on '
+            'one line, or use {% comment %}: ' + '; '.join(offenders),
+        )
+
+    def test_every_template_compiles(self):
+        """A template that only breaks when rendered is a 500 waiting to happen."""
+        from django.template.loader import get_template
+        from django.template import TemplateSyntaxError
+        import pathlib
+        from django.conf import settings
+
+        root = pathlib.Path(settings.BASE_DIR) / 'templates'
+        broken = []
+        for path in self.template_files():
+            name = path.relative_to(root).as_posix()
+            try:
+                get_template(name)
+            except TemplateSyntaxError as exc:
+                broken.append(f'{name}: {exc}')
+
+        self.assertEqual(broken, [],
+                         'Templates with syntax errors: ' + '; '.join(broken))

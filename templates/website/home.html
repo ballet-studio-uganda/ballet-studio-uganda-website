@@ -23,11 +23,8 @@
       <div class="hero-veil" style="opacity:{{ slide.overlay_opacity|default:'0.45' }}"></div>
 
       <div class="hero-content">
-        {# Falls back to the founding year from Site settings, so the hero
-           cannot drift out of step with it the way a typed-in year would. #}
-        <span class="hero-kicker">
-          {{ slide.kicker|default:default_kicker }}
-        </span>
+        {# Blank falls back to the founding year, so this cannot go stale. #}
+        <span class="hero-kicker">{{ slide.kicker|default:default_kicker }}</span>
 
         <h1 class="hero-title">{{ slide.headline }}{% if slide.headline_accent %} <em class="accent">{{ slide.headline_accent }}</em>{% endif %}</h1>
 
