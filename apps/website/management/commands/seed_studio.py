@@ -182,14 +182,14 @@ class Command(BaseCommand):
             site.studio_name = 'Ballet Dance Studio UG'
             site.short_name = 'BDSU'
             site.tagline = 'Resilience. Hope. Dreams.'
-            site.founded_year = 2016
+            site.founded_year = 2021
             site.about_short = (
                 'We train dancers in the classical tradition — turnout, port de bras, '
                 'musicality and the quiet discipline ballet asks for — in a Kampala studio '
                 'where every child is known by name.'
             )
             site.about_full = (
-                'Ballet Dance Studio UG opened its doors in 2016 with eight children and one '
+                'Ballet Dance Studio UG opened its doors in 2021 with eight children and one '
                 'borrowed barre. We now train dancers from age three to adulthood across '
                 'several programmes, and every December we stage a full recital in aid of '
                 'sickle cell awareness — a cause close to our studio family.'
@@ -232,7 +232,9 @@ class Command(BaseCommand):
         """
         if not HeroSlide.objects.exists():
             HeroSlide.objects.create(
-                kicker=f'Kampala · Since {site.founded_year}',
+                # Left blank on purpose: the template derives it from the
+                # founding year, so it cannot go stale when that changes.
+                kicker='',
                 headline='Where discipline becomes',
                 headline_accent='grace',
                 subtext=(
@@ -615,7 +617,7 @@ class Command(BaseCommand):
     def _staff(self):
         spec = [
             ('Nakato', 'Ssentongo', Role.DIRECTOR, 'Creative Director',
-             'Founded the studio in 2016 after training in Nairobi and London.'),
+             'Founded the studio in 2021 after training in Nairobi and London.'),
             ('Grace', 'Namutebi', Role.ADMIN, 'Studio Administrator',
              'Runs enrolment, invoicing and the studio office.'),
             ('Aisha', 'Kigozi', Role.TEACHER, 'Ballet Teacher — Junior Division',
@@ -646,7 +648,7 @@ class Command(BaseCommand):
                 defaults={
                     'job_title': title, 'short_bio': bio, 'bio': bio,
                     'show_on_website': True, 'website_order': len(staff),
-                    'date_joined_studio': dt.date(2016 + len(staff) % 5, 3, 1),
+                    'date_joined_studio': dt.date(2021 + len(staff) % 4, 3, 1),
                     'monthly_salary': Decimal(random.choice([900000, 1200000, 1500000, 2200000])),
                     'qualifications': 'RAD Certificate\nFirst aid trained',
                     'specialisms': 'Classical ballet, Contemporary',

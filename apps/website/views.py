@@ -60,6 +60,9 @@ def home(request):
             'Resilience. Hope. Dreams.'
         ),
         'hero_slides': HeroSlide.objects.filter(is_active=True),
+        # Used when a hero slide has no kicker of its own, so the
+        # founding year is read live rather than frozen into text.
+        'default_kicker': f'Kampala · Since {settings_row.founded_year}',
         'programmes': Program.objects.filter(is_active=True, show_on_website=True)[:6],
         'recital': recital,
         'featured_news': NewsPost.objects.published().select_related('category')[:3],

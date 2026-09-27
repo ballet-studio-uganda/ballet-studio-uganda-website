@@ -361,3 +361,41 @@ class HealthCheckTests(TestCase):
         views._STATIC_VERIFIED = False
         self.assertIsNone(views._check_static_files())
         self.assertTrue(views._STATIC_VERIFIED)
+
+
+class HeroKickerTests(TestCase):
+    """
+    The hero kicker must not drift out of step with the founding year.
+
+    An early seed wrote "Kampala · Since {year}" into the field, which froze
+    it: changing the year in Site settings corrected the marquee and the
+    "years in Kampala" tile but left the hero showing the old one.
+    """
+
+    def setUp(self):
+        site = SiteSettings.load()
+        site.founded_year = 2021
+        site.save()
+
+    def test_a_blank_kicker_is_derived_from_the_founding_year(self):
+        HeroSlide.objects.create(headline='Where discipline becomes',
+                                 headline_accent='grace', kicker='')
+        response = self.client.get(reverse('website:home'))
+        self.assertContains(response, 'Since 2021')
+        self.assertNotContains(response, 'Since 2016')
+
+    def test_it_follows_the_founding_year_when_that_changes(self):
+        HeroSlide.objects.create(headline='Test', kicker='')
+
+        site = SiteSettings.load()
+        site.founded_year = 2019
+        site.save()
+
+        self.assertContains(self.client.get(reverse('website:home')), 'Since 2019')
+
+    def test_a_hand_written_kicker_is_still_respected(self):
+        HeroSlide.objects.create(headline='Test',
+                                 kicker='Uganda’s home of ballet')
+        response = self.client.get(reverse('website:home'))
+        self.assertContains(response, 'home of ballet')
+        self.assertNotContains(response, 'Since 2021')

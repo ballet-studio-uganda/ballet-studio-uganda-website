@@ -56,7 +56,7 @@ class SiteSettings(models.Model):
     studio_name = models.CharField(max_length=140, default='Ballet Dance Studio UG')
     short_name = models.CharField(max_length=60, default='BDSU')
     tagline = models.CharField(max_length=160, default='Resilience. Hope. Dreams.')
-    founded_year = models.PositiveSmallIntegerField(default=2016)
+    founded_year = models.PositiveSmallIntegerField(default=2021)
 
     logo = models.ImageField(upload_to='site/', blank=True)
     logo_light = models.ImageField(
